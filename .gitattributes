@@ -1,0 +1,5 @@
+# These files are "text" and have their line endings normalized (LF)
+*.txt text
+*.html text
+*.css text
+*.js text
