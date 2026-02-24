@@ -1,5 +1,5 @@
 /**************************
-   FOLDER STRUCTURE
+   VISION: TARGET FOLDER STRUCTURE
 ***************************/
 
 Arkadoid/
@@ -18,7 +18,7 @@ Arkadoid/
 ├── systems/
 │   ├── movementSystem.js
 │   ├── gravitySystem.js
-│   └── renderSystem.js    # Canvas2D/WebGL 
+│   └── renderSystem.js    # Canvas2D/WebGL
 │
 ├── entities/
 │   └── createPlayer.js
@@ -48,9 +48,29 @@ Arkadoid/
     └── vector2d.js
 
 
+/**************************
+   IMMEDIATE DELIVERY GOAL
+***************************/
+- Build a clean asteroids clone foundation that respects the architecture above.
+- Prioritize architecture and clean module boundaries over extra features.
+- Sequence:
+  1. Game-state stack (title/menu/level/game)
+  2. Keyboard listener
+  3. Movement system (ship control)
+
 
 /**************************
-   GAMELOOP
+   CURRENT IMPLEMENTED FOUNDATIONS
+***************************/
+- ECS foundations: `ecs/entityManager.js`, `ecs/systemRunner.js`
+- State stack foundations: `gameStates/` (title, menu, level, game)
+- Input foundations: `input/keyboard.js`
+- Movement foundations: `systems/movementSystem.js`
+- Rendering foundations: `render/glRenderer.js`, `systems/renderSystem.js`
+
+
+/**************************
+   CORE GAMELOOP (TARGET)
 ***************************/
 1. Handle Input
 2. Check Collisions
@@ -59,62 +79,8 @@ Arkadoid/
 5. Draw
 
 
-
-/**************************
-   GAME STRUCTURE
-***************************/
-
-Title screen  -  Options
-
 /**************************
    DOCUMENTATION (AUTOMATIC)
 ***************************/
-─ Madge 
+─ Madge
 ─ TypeDoc + JSDoc
-
-
-
-/*********************************************OLD STUFF******************************
-/**************************
-   GAMELOOP
-***************************/
-Script 
-   canvas
-
-   game  
-      inputHandler
-         Event listeners
-      display
-      level
-         players  
-            player
-               hitbox
-               weapon?
-         asteroids   
-            asteroid
-               hitbox
-         projectiles 
-            torpedo
-               hitbox
-         'gameobjects'
-         
-         starfield
-
-         collisionChecker
-            --> 'gameobjectarray'.'gameobject'.hitbox
-         collisionResolver ('gameobject'-pairs)
-            --> level
-
-         -> generate asteroid (type)
-         -> generate projectile (type)
-         -> generate explosion () 
-         -> generate powerup ()
-         -> generate gravitywell () 
-         -> generate ...all gameobject-types
-
-
-      gameloop
-         update level ()
-         update display ()
-         draw level ()
-         draw display ()

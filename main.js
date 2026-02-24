@@ -1,50 +1,57 @@
 import { initGL, loadTexture } from "./render/glRenderer.js";
-import { Position } from "./components/position.js";
-import { Sprite } from "./components/sprite.js";
-import { renderSystem } from "./systems/renderSystem.js";
+import { Keyboard } from "./input/keyboard.js";
+import { StateStack } from "./gameStates/stateStack.js";
+import { TitleState } from "./gameStates/titleState.js";
+import { MenuState } from "./gameStates/menuState.js";
+import { LevelState } from "./gameStates/levelState.js";
+import { GameState } from "./gameStates/gameState.js";
 
-// Canvas setup
 const canvas = document.getElementById("game");
+const hud = document.getElementById("hud");
 canvas.width = 800;
 canvas.height = 600;
 
-// Initialize WebGL
 initGL(canvas);
 
-// Entity Component System
-const ecs = {
-  entities: new Map(),
-  idCounter: 0,
-  add(id, Comp, value) {
-    if (!this.entities.has(id)) this.entities.set(id, new Map());
-    this.entities.get(id).set(Comp, value);
-  },
-  get(id, Comp) {
-    return this.entities.get(id)?.get(Comp);
-  },
-  with(...comps) {
-    const result = [];
-    for (const [id, map] of this.entities.entries()) {
-      if (comps.every(c => map.has(c))) result.push(id);
-    }
-    return result;
-  }
-};
+const keyboard = new Keyboard(window);
+keyboard.attach();
 
-// Load image & start loop
 const image = new Image();
 image.src = "assets/player.png";
+
 image.onload = () => {
-  const tex = loadTexture(image);
-  const id = ecs.idCounter++;
+  const texture = loadTexture(image);
 
-  ecs.add(id, Position, new Position(100, 100));
-  ecs.add(id, Sprite, new Sprite(tex, 64, 64));
+  const createGameState = () => {
+    const gameState = new GameState(texture);
+    gameState.setTitleStateFactory(createTitleState);
+    return gameState;
+  };
 
-  function loop() {
-    renderSystem(ecs, canvas);
+  const createLevelState = () => new LevelState(createGameState);
+  const createMenuState = () => new MenuState(createLevelState);
+  const createTitleState = () => new TitleState(createMenuState);
+
+  const context = {
+    canvas,
+    hud,
+    input: keyboard
+  };
+
+  const stateStack = new StateStack(context);
+  stateStack.push(createTitleState());
+
+  let previousTime = performance.now();
+
+  function loop(now) {
+    const deltaTime = Math.min((now - previousTime) / 1000, 0.033);
+    previousTime = now;
+
+    stateStack.update(deltaTime);
+    keyboard.endFrame();
+
     requestAnimationFrame(loop);
   }
 
-  loop();
+  requestAnimationFrame(loop);
 };
