@@ -1,120 +1,97 @@
 /**************************
+   OVERVIEW
+***************************/
+Arkadoid is an Asteroids clone, designed as a homage to 80's games.
+It features emergent systemic gameplay.
+
+
+
+/**************************
    FOLDER STRUCTURE
 ***************************/
 
-Arkadoid/
-├── index.html
-├── main.js                # Game loop + ECS boot
-├── ecs/
-│   ├── entityManager.js   # Entities + components registry
-│   ├── systemRunner.js    # Calls each system per frame
+project/
+├── src/
+│   ├── core/						/* runtime, engine */
+│   │   ├── gameLoop.js
+│   │   ├── renderer.js
+│   │   └── input.js
+│   │
+│   ├── ecs/						/* ECS infrastructure */
+│   │   ├── world.js				/* central registry */
+│   │   ├── entity.js				/* ID creation and deletion */
+│   │   └── componentStore.js		/* component storage */
+│   │
+│   ├── components/					/* data */
+│   │   ├── position.js
+│   │   ├── velocity.js
+│   │   └── sprite.js
+│   │
+│   ├── systems/					/* logic */
+│   │   ├── movementSystem.js
+│   │   ├── collisionSystem.js
+│   │   └── renderSystem.js
+│   │
+│   ├── entityFactories/			/* entity creation */
+│   │   ├── player.js
+│   │   ├── asteroid.js
+│   │   └── bullet.js
+│   │
+│   ├── scenes/						/* levels */
+│   │   └── level1.js
+│   │
+│   ├── utils/						/* helper functions */
+│   │   └── math.js
+│   │
+│   └── main.js						/* entry point */
 │
-├── components/
-│   ├── position.js
-│   ├── velocity.js
-│   ├── gravitySource.js
-│   ├── …
-│
-├── systems/
-│   ├── movementSystem.js
-│   ├── gravitySystem.js
-│   └── renderSystem.js    # Canvas2D/WebGL 
-│
-├── entities/
-│   └── createPlayer.js
-│   └── …
-│
-├── particles/
-│   └── createPlayer.js
-│
-├── ui/
-│   └── ingameUI.js
-│   └── optionsUI.js
-│   └── optionsUI.js
-│
-├── background/
-│   └── createPlayer.js
-│
-├── titlecards/
-│   └── screenGameOver.js
-│
-├── config/
-│   └── constants.json
-│   └── gamedata/
-│        └── player1.json
-│        └── …
-│
-└── lib/
-    └── vector2d.js
+└── public/							/* static files */
+	├── index.html
+ 	├── css/
+ 	└── assets/
+ 	    ├── sprites/
+ 	    ├── audio/
+ 	    ├── shaders/		
+	    └── fonts/
+ 
+
+/**************************
+   RUNTIME FLOW
+***************************/
+index.html
+   ↓
+main.js
+   ↓
+core (loop/input/render)
+   ↓
+systems
+   ↓
+ecs (world + components)
+   ↓
+entities created by factories
 
 
 
 /**************************
-   GAMELOOP
-***************************/
-1. Handle Input
-2. Check Collisions
-3. Update Entities
-4. Update Particles
-5. Draw
-
-
-
-/**************************
-   GAME STRUCTURE
+   DATA FLOW DIAGRAM 
+   (Entities + Components + Systems)
 ***************************/
 
-Title screen  -  Options
-
-/**************************
-   DOCUMENTATION (AUTOMATIC)
-***************************/
-─ Madge 
-─ TypeDoc + JSDoc
-
-
-
-/*********************************************OLD STUFF******************************
-/**************************
-   GAMELOOP
-***************************/
-Script 
-   canvas
-
-   game  
-      inputHandler
-         Event listeners
-      display
-      level
-         players  
-            player
-               hitbox
-               weapon?
-         asteroids   
-            asteroid
-               hitbox
-         projectiles 
-            torpedo
-               hitbox
-         'gameobjects'
-         
-         starfield
-
-         collisionChecker
-            --> 'gameobjectarray'.'gameobject'.hitbox
-         collisionResolver ('gameobject'-pairs)
-            --> level
-
-         -> generate asteroid (type)
-         -> generate projectile (type)
-         -> generate explosion () 
-         -> generate powerup ()
-         -> generate gravitywell () 
-         -> generate ...all gameobject-types
-
-
-      gameloop
-         update level ()
-         update display ()
-         draw level ()
-         draw display ()
+┌─────────────┐
+│   Game Loop │
+└───────┬─────┘
+        │ calls each frame
+        ▼
+┌─────────────┐        ┌─────────────┐
+│   Systems   │──────▶ │  Entities   │
+│ (logic)     │        │ (data)      │
+└─────────────┘        └──────┬──────┘
+        ▲                     │
+        │ uses components     │ has components
+        │                     ▼
+┌─────────────┐        ┌─────────────┐
+│ Components  │        │ Sprites/    │
+│ (Position,  │        │ Audio, etc. │
+│ Velocity,   │        └─────────────┘
+│ Health…)    │
+└─────────────┘
