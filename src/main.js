@@ -1,0 +1,26 @@
+import { setupInput } from './core/input.js';
+import { createGameLoop } from './core/gameLoop.js';
+import { loadLevel1 } from './scenes/level1.js';
+
+async function bootstrap() {
+  const canvas = document.getElementById('game');
+  const gl = canvas.getContext('webgl');
+
+  canvas.width = 800;
+  canvas.height = 600;
+
+  if (!gl) {
+    throw new Error('WebGL context is not available.');
+  }
+
+  setupInput();
+  const world = await loadLevel1(canvas, gl);
+
+  const loop = createGameLoop((deltaTime) => {
+    world.runSystems(deltaTime);
+  });
+
+  loop.start();
+}
+
+bootstrap();
