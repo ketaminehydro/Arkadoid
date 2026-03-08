@@ -1,4 +1,11 @@
-export function createWebGLRenderer(gl, canvas) {
+import type { PositionComponent, SpriteComponent } from '../utils/componentTypes.js';
+
+interface Renderer {
+  clear: () => void;
+  drawSprite: (sprite: SpriteComponent, position: PositionComponent) => void;
+}
+
+export function createWebGLRenderer(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): Renderer {
   const vertexSource = `
     attribute vec2 a_position;
     attribute vec2 a_texcoord;
@@ -27,20 +34,28 @@ export function createWebGLRenderer(gl, canvas) {
   const positionBuffer = gl.createBuffer();
   const texcoordBuffer = gl.createBuffer();
 
+  if (!positionBuffer || !texcoordBuffer) {
+    throw new Error('Unable to create WebGL buffer.');
+  }
+
   const positionLocation = gl.getAttribLocation(program, 'a_position');
   const texcoordLocation = gl.getAttribLocation(program, 'a_texcoord');
   const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
   const textureLocation = gl.getUniformLocation(program, 'u_texture');
 
-  const textureCache = new WeakMap();
+  if (!resolutionLocation || !textureLocation) {
+    throw new Error('Unable to find required WebGL uniforms.');
+  }
 
-  function clear() {
+  const textureCache = new WeakMap<HTMLImageElement, WebGLTexture>();
+
+  function clear(): void {
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
-  function drawSprite(sprite, position) {
+  function drawSprite(sprite: SpriteComponent, position: PositionComponent): void {
     const texture = getTextureFromImage(sprite.image);
 
     const x1 = position.x;
@@ -87,12 +102,17 @@ export function createWebGLRenderer(gl, canvas) {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
-  function getTextureFromImage(image) {
-    if (textureCache.has(image)) {
-      return textureCache.get(image);
+  function getTextureFromImage(image: HTMLImageElement): WebGLTexture {
+    const cachedTexture = textureCache.get(image);
+    if (cachedTexture) {
+      return cachedTexture;
     }
 
     const texture = gl.createTexture();
+    if (!texture) {
+      throw new Error('Unable to create WebGL texture.');
+    }
+
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -110,8 +130,12 @@ export function createWebGLRenderer(gl, canvas) {
   };
 }
 
-function createShader(gl, type, source) {
+function createShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader {
   const shader = gl.createShader(type);
+  if (!shader) {
+    throw new Error('Unable to create shader.');
+  }
+
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
 
@@ -124,11 +148,19 @@ function createShader(gl, type, source) {
   return shader;
 }
 
-function createProgram(gl, vertexSource, fragmentSource) {
+function createProgram(
+  gl: WebGLRenderingContext,
+  vertexSource: string,
+  fragmentSource: string
+): WebGLProgram {
   const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
 
   const program = gl.createProgram();
+  if (!program) {
+    throw new Error('Unable to create shader program.');
+  }
+
   gl.attachShader(program, vertexShader);
   gl.attachShader(program, fragmentShader);
   gl.linkProgram(program);

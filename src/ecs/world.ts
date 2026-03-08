@@ -1,6 +1,14 @@
 import { ComponentStore } from './componentStore.js';
 
+export type ComponentType = symbol;
+export type System = (world: World, deltaTime: number) => void;
+
 export class World {
+  nextEntityId: number;
+  entities: Set<number>;
+  componentStores: Map<ComponentType, ComponentStore<unknown>>;
+  systems: System[];
+
   constructor() {
     this.nextEntityId = 0;
     this.entities = new Set();
@@ -8,26 +16,26 @@ export class World {
     this.systems = [];
   }
 
-  addComponent(entityId, componentType, component) {
+  addComponent<T>(entityId: number, componentType: ComponentType, component: T): void {
     let store = this.componentStores.get(componentType);
     if (!store) {
-      store = new ComponentStore();
+      store = new ComponentStore<unknown>();
       this.componentStores.set(componentType, store);
     }
 
     store.set(entityId, component);
   }
 
-  getComponent(entityId, componentType) {
-    return this.componentStores.get(componentType)?.get(entityId);
+  getComponent<T>(entityId: number, componentType: ComponentType): T | undefined {
+    return this.componentStores.get(componentType)?.get(entityId) as T | undefined;
   }
 
-  removeComponent(entityId, componentType) {
+  removeComponent(entityId: number, componentType: ComponentType): void {
     this.componentStores.get(componentType)?.delete(entityId);
   }
 
-  getEntitiesWith(...componentTypes) {
-    const matches = [];
+  getEntitiesWith(...componentTypes: ComponentType[]): number[] {
+    const matches: number[] = [];
     for (const entityId of this.entities) {
       const hasAll = componentTypes.every((componentType) =>
         this.componentStores.get(componentType)?.has(entityId)
@@ -39,11 +47,11 @@ export class World {
     return matches;
   }
 
-  addSystem(system) {
+  addSystem(system: System): void {
     this.systems.push(system);
   }
 
-  runSystems(deltaTime) {
+  runSystems(deltaTime: number): void {
     for (const system of this.systems) {
       system(this, deltaTime);
     }
