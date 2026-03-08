@@ -6,16 +6,19 @@ import { collisionSystem } from '../systems/collisionSystem.js';
 import { createRenderSystem } from '../systems/renderSystem.js';
 import { createWebGLRenderer } from '../core/webglRenderer.js';
 
-function loadImage(src) {
+function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
-    image.onerror = reject;
+    image.onerror = () => reject(new Error(`Failed to load image: ${src}`));
     image.src = src;
   });
 }
 
-export async function loadLevel1(canvas, gl) {
+export async function loadLevel1(
+  canvas: HTMLCanvasElement,
+  gl: WebGLRenderingContext
+): Promise<World> {
   const world = new World();
   const renderer = createWebGLRenderer(gl, canvas);
   const playerImage = await loadImage('./assets/player.png');
