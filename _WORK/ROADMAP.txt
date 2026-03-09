@@ -1,0 +1,45 @@
+/*****************************************************************
+   1. MILESTONES : ENGINE
+*****************************************************************/
+
+[1]
+✔ ECS prototype
+✔ Moving sprite
+o Convert project to TypeScript 
+o Virtual resolution scaling
+o Input abstraction + json reader
+o State stack (fpr gamestates)
+o Rendering system
+o Shader integration
+
+/* CELEBRATION TIME -> switch to gameplay 1 */
+
+[2]
+o collisions
+
+/* CELEBRATION TIME -> switch to gameplay 2 */
+
+[3]
+o Multiplayer
+o particle system
+o sprite/animation system
+o JSON loader / configurator
+o sound system
+o music integration
+
+/*****************************************************************
+   2. MILESTONES : GAMEPLAY
+*****************************************************************/
+
+[1]
+o proper ship movement
+o Asteroids
+o boundary handling
+
+/* CELEBRATION TIME -> switch to engine 2 */
+
+[2]
+o Blackhole
+o Systemic weapons 
+
+/* CELEBRATION TIME -> switch to engine 3 */

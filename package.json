@@ -8,6 +8,19 @@
     "dev": "tsc --watch"
   },
   "devDependencies": {
-    "typescript": "^5.9.2"
-  }
+    "typescript": "^5.9.3"
+  },
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ketaminehydro/Arkadoid.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ketaminehydro/Arkadoid/issues"
+  },
+  "homepage": "https://github.com/ketaminehydro/Arkadoid#readme"
 }
