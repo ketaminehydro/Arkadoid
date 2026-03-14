@@ -2,6 +2,7 @@ import { setupInput } from './core/input.js';
 import { createGameLoop } from './core/gameLoop.js';
 import { loadLevel1 } from './scenes/level1.js';
 
+
 async function bootstrap(): Promise<void> {
   const canvas = document.getElementById('game');
   if (!(canvas instanceof HTMLCanvasElement)) {

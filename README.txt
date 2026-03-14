@@ -11,14 +11,15 @@ It features emergent systemic gameplay.
 *****************************************************************/
 
 project/
+│   
 ├── src/
-│   ├── core/						/* runtime, engine */
+│   ├── core/						   /* runtime, engine */
 │   │   ├── gameLoop.js
 │   │   ├── renderer.js
 │   │   └── input.js
 │   │
-│   ├── ecs/						/* ECS infrastructure */
-│   │   ├── world.js				/* central registry */
+│   ├── ecs/						   /* ECS infrastructure */
+│   │   ├── world.js				   /* central registry */
 │   │   ├── entity.js				/* ID creation and deletion */
 │   │   └── componentStore.js		/* component storage */
 │   │
@@ -27,7 +28,7 @@ project/
 │   │   ├── velocity.js
 │   │   └── sprite.js
 │   │
-│   ├── systems/					/* logic */
+│   ├── systems/					   /* logic */
 │   │   ├── movementSystem.js
 │   │   ├── collisionSystem.js
 │   │   └── renderSystem.js
@@ -40,20 +41,24 @@ project/
 │   ├── scenes/						/* levels */
 │   │   └── level1.js
 │   │
-│   ├── utils/						/* helper functions */
+│   ├── utils/						   /* helper functions */
 │   │   └── math.js
 │   │
-│   └── main.js						/* entry point */
+│   └── main.js					   /* entry point */
 │
-└── public/							/* static files */
-	├── index.html
- 	├── css/
- 	└── assets/
- 	    ├── sprites/
- 	    ├── audio/
- 	    ├── shaders/		
-	    └── fonts/
- 
+├── public/							   /* static files */
+│	├── css/
+│	└── assets/
+│	    ├── sprites/
+│	    ├── audio/
+│	    ├── shaders/		
+│	    └── fonts/
+│
+├── package.json
+├── tsconfig.json
+└── index.html
+
+
 
 /*****************************************************************
    RUNTIME FLOW

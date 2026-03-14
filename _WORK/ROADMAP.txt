@@ -1,23 +1,24 @@
 /*****************************************************************
-   1. MILESTONES : ENGINE
+   ENGINE
 *****************************************************************/
 
 [1]
 ✔ ECS prototype
 ✔ Moving sprite
-o Convert project to TypeScript 
-o Virtual resolution scaling
+✔ Convert project to TypeScript 
+✔ Convert project to Vite
+o Virtual resolution scaling (renderer, camera, viewport scaling)
 o Input abstraction + json reader
 o State stack (fpr gamestates)
 o Rendering system
 o Shader integration
 
-/* CELEBRATION TIME -> switch to gameplay 1 */
+/* MILESTONE 1: RUNNING MVP ENGINE -> switch to gameplay 1 */
 
 [2]
 o collisions
 
-/* CELEBRATION TIME -> switch to gameplay 2 */
+/* MILESTONE 3: COLLISIONS BABY -> switch to gameplay 2 */
 
 [3]
 o Multiplayer
@@ -27,8 +28,10 @@ o JSON loader / configurator
 o sound system
 o music integration
 
+/* MILESTONE 5: MVP GAME */
+
 /*****************************************************************
-   2. MILESTONES : GAMEPLAY
+   GAMEPLAY
 *****************************************************************/
 
 [1]
@@ -36,10 +39,10 @@ o proper ship movement
 o Asteroids
 o boundary handling
 
-/* CELEBRATION TIME -> switch to engine 2 */
+/* MILESTONE 2: FLYING SHIP -> switch to engine 2 */
 
 [2]
 o Blackhole
 o Systemic weapons 
 
-/* CELEBRATION TIME -> switch to engine 3 */
+/* MILESTONE 4: RUNNING PROTOTYPE GAME -> switch to engine 3 */

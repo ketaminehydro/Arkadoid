@@ -5,11 +5,13 @@
     "moduleResolution": "Bundler",
     "strict": true,
     "rootDir": "src",
-    "outDir": "dist",
+    "noEmit": true,
     "sourceMap": true,
     "allowJs": false,
     "lib": ["ES2020", "DOM"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strictNullChecks": true
   },
   "include": ["src/**/*.ts"]
 }

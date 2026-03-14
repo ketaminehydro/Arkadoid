@@ -1,7 +1,7 @@
 # If this ever gets into a public folder, remove the #
 #/_WORK
-#/.idea
-#/.vscode
-#/Arkadoid.code-workspace
+.idea
+.vscode
+Arkadoid.code-workspace
 node_modules/
 dist/
