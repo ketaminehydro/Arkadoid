@@ -100,3 +100,21 @@ entities created by factories
 │ Velocity,   │        └─────────────┘
 │ Health…)    │
 └─────────────┘
+
+
+/*****************************************************************
+   RENDER PIPELINE
+*****************************************************************/
+
+WORLD (meters, large)
+      ↓
+CAMERA ENTITY (meters)
+      ↓
+  (conversion: meters → pixels)
+      ↓
+VIRTUAL CANVAS (pixels: 960 x 540)
+      ↓
+  (scaling: pixel perfect integer scaling with letterboxing)
+  (according to screen size, recalculated on the fly on window resize) 
+      ↓
+SCREEN
