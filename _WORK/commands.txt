@@ -1,0 +1,25 @@
+/*****************************************************************
+   GIT
+*****************************************************************/
+
+// Switch to dev, then overwrite main:
+git checkout dev
+git push origin dev:main --force
+
+// update git
+git pull
+
+// status report
+git status
+
+
+/*****************************************************************
+   VITE
+*****************************************************************/
+
+// run development server
+npm run dev
+
+// build and run preview server
+npm run build
+npm run preview

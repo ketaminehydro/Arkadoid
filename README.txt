@@ -112,6 +112,13 @@ CAMERA ENTITY (meters)
       ↓
   (conversion: meters → pixels)
       ↓
+GPU PIPELINE
+    Vertex Shader
+         ↓
+    Rasterization
+         ↓
+    Fragment/Pixel Shader
+         ↓
 VIRTUAL CANVAS (pixels: 960 x 540)
       ↓
   (scaling: pixel perfect integer scaling with letterboxing)
