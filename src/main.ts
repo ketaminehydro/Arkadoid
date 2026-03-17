@@ -2,7 +2,6 @@ import { setupInput } from './core/input.js';
 import { createGameLoop } from './core/gameLoop.js';
 import { loadLevel1 } from './scenes/level1.js';
 
-
 async function bootstrap(): Promise<void> {
   const canvas = document.getElementById('game');
   if (!(canvas instanceof HTMLCanvasElement)) {
@@ -10,10 +9,6 @@ async function bootstrap(): Promise<void> {
   }
 
   const gl = canvas.getContext('webgl');
-
-  canvas.width = 800;
-  canvas.height = 600;
-
   if (!gl) {
     throw new Error('WebGL context is not available.');
   }
