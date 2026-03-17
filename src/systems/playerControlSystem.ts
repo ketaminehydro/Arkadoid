@@ -3,7 +3,7 @@ import { getAxisX, getAxisY } from '../core/input.js';
 import { Velocity } from '../utils/componentTypes.js';
 import type { VelocityComponent } from '../utils/componentTypes.js';
 
-const PLAYER_SPEED = 220;
+const PLAYER_SPEED = 8; // meters per second
 
 export function playerControlSystem(world: World): void {
   for (const entityId of world.getEntitiesWith(Velocity)) {
