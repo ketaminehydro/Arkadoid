@@ -6,7 +6,7 @@
 git checkout dev
 git push origin dev:main --force
 
-// update git
+// update local git
 git pull
 
 // status report

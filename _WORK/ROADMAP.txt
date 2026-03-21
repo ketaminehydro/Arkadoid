@@ -8,10 +8,11 @@
 ✔ Convert project to TypeScript 
 ✔ Convert project to Vite
 o Virtual resolution scaling (renderer, camera, viewport scaling)
-o Input abstraction + json reader
-o State stack (fpr gamestates)
 o Rendering system
 o Shader integration
+o Input abstraction + json reader
+o State stack (for gamestates such as menu, options, etc.)
+
 
 /* MILESTONE 1: RUNNING MVP ENGINE -> switch to gameplay 1 */
 
@@ -29,6 +30,9 @@ o sound system
 o music integration
 
 /* MILESTONE 5: MVP GAME */
+
+o scene loader?
+
 
 /*****************************************************************
    GAMEPLAY
