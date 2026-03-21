@@ -18,6 +18,8 @@ function randomRange(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
+
+//TODO: move to entityFactories
 function createAsteroids(world: World, count: number): void {
   for (let index = 0; index < count; index += 1) {
     const asteroidId = createEntity(world);
@@ -34,12 +36,16 @@ function createAsteroids(world: World, count: number): void {
   }
 }
 
+// Level construction: what entities, how many and where
 export async function loadLevel1(
   canvas: HTMLCanvasElement,
   gl: WebGLRenderingContext
 ): Promise<World> {
+
+  // World
   const world = new World();
 
+  // Player
   const playerId = createPlayer(world, {
     x: 50,
     y: 50,
@@ -47,14 +53,17 @@ export async function loadLevel1(
   });
   world.addComponent(playerId, Body, createBody(2, 2, '#f4d35e'));
 
+  // Asteroids
   createAsteroids(world, 14);
 
+  // Cameras //TODO: move this elsewhere
   const followCameraId = createEntity(world);
   world.addComponent(followCameraId, Camera, createCamera(50, 50, 2, 15, 8.4375));
 
   const overviewCameraId = createEntity(world);
   world.addComponent(overviewCameraId, Camera, createCamera(50, 50, 0.15, 100, 100));
 
+  // Renderer
   const renderer = createRenderer(gl, canvas, {
     worldBounds: {
       width: WORLD_WIDTH_METERS,
@@ -96,6 +105,8 @@ export async function loadLevel1(
   return world;
 }
 
+
+//TODO: move elsewhere
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
