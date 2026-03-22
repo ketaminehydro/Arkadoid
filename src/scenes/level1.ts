@@ -1,25 +1,38 @@
 import { createEntity } from '../ecs/entity.js';
 import { World } from '../ecs/world.js';
-import { createPlayer } from '../entityFactories/player.js';
-import { createBody } from '../components/body.js';
-import { createCamera } from '../components/camera.js';
-import { createPosition } from '../components/position.js';
+
+import { createPlayer } from '../entities/player.js';
+
+import { Body, createBody, 
+  Position, createPosition, 
+  Velocity, createVelocity, 
+  Sprite, createSprite, 
+  Camera, createCamera 
+} from '../components';
+
 import { playerControlSystem } from '../systems/playerControlSystem.js';
 import { movementSystem } from '../systems/movementSystem.js';
 import { collisionSystem } from '../systems/collisionSystem.js';
-import { createRenderSystem } from '../systems/renderSystem.js';
-import { createRenderer, VIRTUAL_RESOLUTION } from '../rendering/Renderer.js';
-import { Body, Camera, Position } from '../utils/componentTypes.js';
 
-const WORLD_WIDTH_METERS = 100;
-const WORLD_HEIGHT_METERS = 100;
-
+/* helper functions */
 function randomRange(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
+export interface Level1{
+  world: World;
+  playerId: number;
+  followCameraId: number;
+  overviewCameraId: number;
+  worldSize: { width: number; height: number };
+}
 
-//TODO: move to entityFactories
+// World size for this level
+const WORLD_WIDTH_METERS = 100;
+const WORLD_HEIGHT_METERS = 100;
+
+
+// Asteroid placer function
 function createAsteroids(world: World, count: number): void {
   for (let index = 0; index < count; index += 1) {
     const asteroidId = createEntity(world);
@@ -37,10 +50,7 @@ function createAsteroids(world: World, count: number): void {
 }
 
 // Level construction: what entities, how many and where
-export async function loadLevel1(
-  canvas: HTMLCanvasElement,
-  gl: WebGLRenderingContext
-): Promise<World> {
+export async function loadLevel1(): Promise<Level1> {
 
   // World
   const world = new World();
@@ -56,53 +66,28 @@ export async function loadLevel1(
   // Asteroids
   createAsteroids(world, 14);
 
-  // Cameras //TODO: move this elsewhere
+  // Cameras 
   const followCameraId = createEntity(world);
   world.addComponent(followCameraId, Camera, createCamera(50, 50, 2, 15, 8.4375));
 
   const overviewCameraId = createEntity(world);
   world.addComponent(overviewCameraId, Camera, createCamera(50, 50, 0.15, 100, 100));
 
-  // Renderer
-  const renderer = createRenderer(gl, canvas, {
-    worldBounds: {
-      width: WORLD_WIDTH_METERS,
-      height: WORLD_HEIGHT_METERS
-    },
-    viewports: [
-      {
-        x: 0,
-        y: 0,
-        width: VIRTUAL_RESOLUTION.width / 2,
-        height: VIRTUAL_RESOLUTION.height,
-        cameraId: followCameraId
-      },
-      {
-        x: VIRTUAL_RESOLUTION.width / 2,
-        y: 0,
-        width: VIRTUAL_RESOLUTION.width / 2,
-        height: VIRTUAL_RESOLUTION.height,
-        cameraId: overviewCameraId
-      }
-    ]
-  });
-
-  window.addEventListener('resize', renderer.resizeToWindow);
-
   world.addSystem(playerControlSystem);
   world.addSystem(collisionSystem);
   world.addSystem(movementSystem);
-  world.addSystem(
-    createRenderSystem({
-      renderer,
-      playerId,
-      followCameraId,
-      overviewCameraId,
-      worldSize: { width: WORLD_WIDTH_METERS, height: WORLD_HEIGHT_METERS }
-    })
-  );
 
-  return world;
+
+  return {
+    world,
+    playerId,
+    followCameraId,
+    overviewCameraId,
+    worldSize: {
+      width: WORLD_WIDTH_METERS,
+      height: WORLD_HEIGHT_METERS
+    }
+  };
 }
 
 

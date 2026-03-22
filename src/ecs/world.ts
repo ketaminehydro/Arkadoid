@@ -1,13 +1,13 @@
 import { ComponentStore } from './componentStore.js';
+import { ComponentType } from '../components/component';
+import type { System } from './system';
 
-export type ComponentType = symbol;
-export type System = (world: World, deltaTime: number) => void;
 
 export class World {
   nextEntityId: number;
   entities: Set<number>;
-  componentStores: Map<ComponentType, ComponentStore<unknown>>;
-  systems: System[];
+  componentStores: Map<ComponentType<any>, ComponentStore<any>>;
+  private systems: System[] = [];
 
   constructor() {
     this.nextEntityId = 0;
@@ -16,7 +16,7 @@ export class World {
     this.systems = [];
   }
 
-  addComponent<T>(entityId: number, componentType: ComponentType, component: T): void {
+  addComponent<T>(entityId: number, componentType: ComponentType<T>, component: T): void {
     let store = this.componentStores.get(componentType);
     if (!store) {
       store = new ComponentStore<unknown>();
@@ -26,15 +26,15 @@ export class World {
     store.set(entityId, component);
   }
 
-  getComponent<T>(entityId: number, componentType: ComponentType): T | undefined {
-    return this.componentStores.get(componentType)?.get(entityId) as T | undefined;
-  }
+  getComponent<T>(entityId: number, componentType: ComponentType<T>): T | undefined {
+  return this.componentStores.get(componentType)?.get(entityId) as T | undefined;
+}
 
-  removeComponent(entityId: number, componentType: ComponentType): void {
+  removeComponent(entityId: number, componentType: ComponentType<any>): void {
     this.componentStores.get(componentType)?.delete(entityId);
   }
 
-  getEntitiesWith(...componentTypes: ComponentType[]): number[] {
+  getEntitiesWith(...componentTypes: ComponentType<any>[]): number[] {
     const matches: number[] = [];
     for (const entityId of this.entities) {
       const hasAll = componentTypes.every((componentType) =>
@@ -50,6 +50,7 @@ export class World {
   addSystem(system: System): void {
     this.systems.push(system);
   }
+
 
   runSystems(deltaTime: number): void {
     for (const system of this.systems) {

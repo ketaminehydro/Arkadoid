@@ -5,12 +5,23 @@
 [1]
 ✔ ECS prototype
 ✔ Moving sprite
+
 ✔ Convert project to TypeScript 
 ✔ Convert project to Vite
-o Virtual resolution scaling (renderer, camera, viewport scaling)
-o Rendering system
+
+o ECS structure stabilisation: 
+...✔ components
+...o systems
+...o entities
+...o renderSystem
+o Render queue
+o Camera separation / Viewports
+o World -> screen transform (Virtual resolution scaling)
+o Rendering system batching
 o Shader integration
+
 o Input abstraction + json reader
+
 o State stack (for gamestates such as menu, options, etc.)
 
 

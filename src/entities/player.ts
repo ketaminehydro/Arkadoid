@@ -1,9 +1,7 @@
 import { createEntity } from '../ecs/entity.js';
 import type { World } from '../ecs/world.js';
-import { createPosition } from '../components/position.js';
-import { createVelocity } from '../components/velocity.js';
-import { createSprite } from '../components/sprite.js';
-import { Position, Velocity, Sprite } from '../utils/componentTypes.js';
+
+import { Position, createPosition, Velocity, createVelocity, Sprite, createSprite } from '../components';
 
 interface PlayerConfig {
   x: number;

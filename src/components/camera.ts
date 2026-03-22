@@ -1,5 +1,18 @@
-import type { CameraComponent } from '../utils/componentTypes.js';
+/* TYPE */
+import { ComponentType } from './component';
+export interface CameraComponent {
+  x: number; // meters
+  y: number; // meters
+  zoom: number; // factor
+  viewWidth: number; // meters
+  viewHeight: number; // meters
+}
 
+/* SYMBOL */
+export const Camera: ComponentType<CameraComponent> = 
+  Symbol('Camera') as ComponentType<CameraComponent>;
+
+/* FACTORY */
 export function createCamera(
   x: number,
   y: number,
@@ -8,7 +21,8 @@ export function createCamera(
   viewHeight: number
 ): CameraComponent {
   return {
-    position: { x, y },
+    x, 
+    y,
     zoom,
     viewWidth,
     viewHeight

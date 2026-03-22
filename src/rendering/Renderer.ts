@@ -1,6 +1,5 @@
 import type { World } from '../ecs/world.js';
-import { Body, Camera, Position } from '../utils/componentTypes.js';
-import type { BodyComponent, CameraComponent, PositionComponent } from '../utils/componentTypes.js';
+import { Body, Camera, Position } from '../components';
 import type { Viewport } from './Viewport.js';
 import { getPixelsPerMeter } from './Camera.js';
 import type { WorldBounds } from './World.js';
@@ -140,7 +139,7 @@ export function createRenderer(
   }
 
   function renderViewport(world: World, viewport: Viewport): void {
-    const camera = world.getComponent<CameraComponent>(viewport.cameraId, Camera);
+    const camera = world.getComponent(viewport.cameraId, Camera);
     if (!camera) {
       return;
     }

@@ -14,31 +14,32 @@ project/
 │   
 ├── src/
 │   ├── core/						   /* runtime, engine */
-│   │   ├── gameLoop.js
-│   │   ├── renderer.js
-│   │   └── input.js
+│   │   ├── gameLoop.js          /* runs every frame: inputs, systems and renderer */
+│   │   ├── renderer.js          /* WebGL renderer */
+│   │   └── input.js             /* Input handler */
 │   │
 │   ├── ecs/						   /* ECS infrastructure */
-│   │   ├── world.js				   /* central registry */
-│   │   ├── entity.js				/* ID creation and deletion */
-│   │   └── componentStore.js		/* component storage */
+│   │   ├── world.js				   /* orchestration: central registry of all entities, i.e. the world */
+│   │   ├── entity.js				/* entity creation and deletion 
+│   │   ├── system.ts            /* system type definition, i.e. format restriction for systems */
+│   │   └── componentStore.js		/* storage: component storage, i.e. which entity has which data? */
 │   │
-│   ├── components/					/* data */
+│   ├── components/					/* components: definitions of attributes/data */
 │   │   ├── position.js
 │   │   ├── velocity.js
 │   │   └── sprite.js
 │   │
-│   ├── systems/					   /* logic */
+│   ├── systems/					   /* behaviour: definitions of the logic that acts on components */
 │   │   ├── movementSystem.js
 │   │   ├── collisionSystem.js
 │   │   └── renderSystem.js
 │   │
-│   ├── entityFactories/			/* entity creation */
+│   ├── entities/			         /* composition: definitions of entities and which components they have */
 │   │   ├── player.js
 │   │   ├── asteroid.js
 │   │   └── bullet.js
 │   │
-│   ├── scenes/						/* levels */
+│   ├── scenes/						/* setting: sets up a level/world and fills it with entities */
 │   │   └── level1.js
 │   │
 │   ├── utils/						   /* helper functions */
@@ -61,13 +62,13 @@ project/
 
 
 /*****************************************************************
-   RUNTIME FLOW
+   RUNTIME FLOW    // TODO: revise this
 *****************************************************************/
 index.html
    ↓
 main.js
    ↓
-core (loop/input/render)
+core (input/gameloop/render)
    ↓
 systems
    ↓
@@ -77,8 +78,15 @@ entities created by factories
 
 
 
+          systems
+             ↓
+          world
+             ↓
+     componentStore
+
+
 /*****************************************************************
-   DATA FLOW DIAGRAM 
+   DATA FLOW DIAGRAM  // TODO: revise this
    (Entities + Components + Systems)
 *****************************************************************/
 
@@ -89,7 +97,8 @@ entities created by factories
         ▼
 ┌─────────────┐        ┌─────────────┐
 │   Systems   │──────▶ │  Entities   │
-│ (logic)     │        │ (data)      │
+│ (logic/     │        │  (data)     │
+│  Behaviour) │        │             │
 └─────────────┘        └──────┬──────┘
         ▲                     │
         │ uses components     │ has components
@@ -125,3 +134,34 @@ VIRTUAL CANVAS (pixels: 960 x 540)
   (according to screen size, recalculated on the fly on window resize) 
       ↓
 SCREEN
+
+________________________________
+
+ECS World (data)
+   ↓
+Render System (extracts visible things)
+   ↓
+Renderer (GPU / WebGL execution)
+
+________________________________
+
+[ LEVEL ]        → what exists 
+[ ECS ]          → data + logic
+[ RENDER SYSTEM ]→ extracts render data
+[ RENDERER ]     → GPU execution
+
+level1.ts        → creates entities
+systems/         → gameplay + render system
+rendering/       → WebGL stuff
+main.ts          → wires everything together
+
+
+
+/*****************************************************************
+   Entity Component System (ECS) structure
+*****************************************************************/
+LAYER	      : RESPONSIBILITY 
+Level	      : Entities & composition
+Systems	   : Behavior
+Renderer	   : Drawing
+App/Main	   : Wiring everything together

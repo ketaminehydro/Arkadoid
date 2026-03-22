@@ -1,11 +1,11 @@
 import type { World } from '../ecs/world.js';
-import { Position, Velocity } from '../utils/componentTypes.js';
-import type { PositionComponent, VelocityComponent } from '../utils/componentTypes.js';
+import { Position, Velocity } from '../components';
+import type { System } from '../ecs/system';
 
 export function movementSystem(world: World, deltaTime: number): void {
   for (const entityId of world.getEntitiesWith(Position, Velocity)) {
-    const position = world.getComponent<PositionComponent>(entityId, Position);
-    const velocity = world.getComponent<VelocityComponent>(entityId, Velocity);
+    const position = world.getComponent(entityId, Position);
+    const velocity = world.getComponent(entityId, Velocity);
 
     if (!position || !velocity) {
       continue;

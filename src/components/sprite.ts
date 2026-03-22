@@ -1,5 +1,16 @@
-import type { SpriteComponent } from '../utils/componentTypes.js';
+/* TYPE */
+import { ComponentType } from './component';
+export interface SpriteComponent {
+  image: HTMLImageElement;
+  width: number;
+  height: number;
+}
 
+/* SYMBOL */
+export const Sprite: ComponentType<SpriteComponent> = 
+  Symbol('Sprite') as ComponentType<SpriteComponent>;
+
+/* FACTORY */
 export function createSprite(
   image: HTMLImageElement,
   width = 64,
