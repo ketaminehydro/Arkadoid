@@ -11,9 +11,9 @@
 
 o ECS structure stabilisation: 
 ...✔ components
-...o systems
-...o entities
+...✔ systems
 ...o renderSystem
+...o entities
 o Render queue
 o Camera separation / Viewports
 o World -> screen transform (Virtual resolution scaling)

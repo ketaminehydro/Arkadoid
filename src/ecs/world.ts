@@ -49,12 +49,25 @@ export class World {
 
   addSystem(system: System): void {
     this.systems.push(system);
+
+    // sort the systems
+    this.systems.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+    
+    /* Mental map for ordering: lower runs first 
+      InputSystem        → priority: 10
+      MovementSystem     → priority: 20
+      CollisionSystem    → priority: 30
+      GameplaySystem     → priority: 40
+      AnimationSystem    → priority: 50
+      RenderSystem       → priority: 100
+    */
   }
 
-
+  // run all systems with the given delta time. This function is called in the main game loop, 
+  // and it will execute each system in the order they were added to the world.
   runSystems(deltaTime: number): void {
     for (const system of this.systems) {
-      system(this, deltaTime);
+      system.update(this, deltaTime);
     }
   }
 }

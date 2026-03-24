@@ -72,6 +72,8 @@ async function bootstrap(): Promise<void> {
   // Expose debug helpers
   setupDebug(world, entities);
   */
+
+
   
   // Start the game loop (loop is of type GameLoop)
   const loop = createGameLoop((deltaTime: number) => {

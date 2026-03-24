@@ -1,3 +1,6 @@
-// ecs/system.ts
 import type { World } from './world';
-export type System = (world: World, deltaTime: number) => void;
+export interface System {
+  name: string;
+  priority: number;
+  update: (world: World, deltaTime: number) => void;
+}
