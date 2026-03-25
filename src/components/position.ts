@@ -1,5 +1,5 @@
 /* TYPE */
-import { ComponentType } from './component';
+import { ComponentType } from '../ecs/component';
 export interface PositionComponent {
   x: number; // meters
   y: number; // meters

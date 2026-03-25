@@ -1,5 +1,5 @@
 /* TYPE */
-import { ComponentType } from './component';
+import { ComponentType } from '../ecs/component';
 export interface VelocityComponent {
   vx: number;
   vy: number;

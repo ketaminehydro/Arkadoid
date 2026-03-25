@@ -1,4 +1,3 @@
-import { createEntity } from '../ecs/entity.js';
 import { World } from '../ecs/world.js';
 
 import { createPlayer } from '../entities/player.js';
@@ -35,7 +34,7 @@ const WORLD_HEIGHT_METERS = 100;
 // Asteroid placer function
 function createAsteroids(world: World, count: number): void {
   for (let index = 0; index < count; index += 1) {
-    const asteroidId = createEntity(world);
+    const asteroidId = world.createEntity();
     world.addComponent(
       asteroidId,
       Position,
@@ -67,10 +66,10 @@ export async function loadLevel1(): Promise<Level1> {
   createAsteroids(world, 14);
 
   // Cameras 
-  const followCameraId = createEntity(world);
+  const followCameraId = world.createEntity();
   world.addComponent(followCameraId, Camera, createCamera(50, 50, 2, 15, 8.4375));
 
-  const overviewCameraId = createEntity(world);
+  const overviewCameraId = world.createEntity();
   world.addComponent(overviewCameraId, Camera, createCamera(50, 50, 0.15, 100, 100));
 
   world.addSystem(playerControlSystem);

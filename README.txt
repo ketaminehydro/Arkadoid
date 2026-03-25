@@ -110,6 +110,15 @@ entities created by factories
 │ Health…)    │
 └─────────────┘
 
+World
+→ owns everything mutable
+
+Entities (factories)
+→ describe compositions
+
+Systems
+→ operate on data
+
 
 /*****************************************************************
    RENDER PIPELINE

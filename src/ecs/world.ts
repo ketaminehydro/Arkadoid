@@ -1,11 +1,12 @@
 import { ComponentStore } from './componentStore.js';
-import { ComponentType } from '../components/component';
+import { ComponentType } from './component.js';
 import type { System } from './system';
+import type { EntityId } from './entity';
 
 
 export class World {
-  nextEntityId: number;
-  entities: Set<number>;
+  nextEntityId: EntityId;
+  entities: Set<EntityId>;
   componentStores: Map<ComponentType<any>, ComponentStore<any>>;
   private systems: System[] = [];
 
@@ -16,7 +17,7 @@ export class World {
     this.systems = [];
   }
 
-  addComponent<T>(entityId: number, componentType: ComponentType<T>, component: T): void {
+  addComponent<T>(entityId: EntityId, componentType: ComponentType<T>, component: T): void {
     let store = this.componentStores.get(componentType);
     if (!store) {
       store = new ComponentStore<unknown>();
@@ -26,13 +27,30 @@ export class World {
     store.set(entityId, component);
   }
 
-  getComponent<T>(entityId: number, componentType: ComponentType<T>): T | undefined {
+  getComponent<T>(entityId: EntityId, componentType: ComponentType<T>): T | undefined {
   return this.componentStores.get(componentType)?.get(entityId) as T | undefined;
 }
 
-  removeComponent(entityId: number, componentType: ComponentType<any>): void {
+  removeComponent(entityId: EntityId, componentType: ComponentType<any>): void {
     this.componentStores.get(componentType)?.delete(entityId);
   }
+
+createEntity(): EntityId {
+  const entityId = this.nextEntityId;
+  this.nextEntityId += 1;
+  this.entities.add(entityId);
+  return entityId;
+}
+
+deleteEntity(entityId: EntityId): void {
+  if (!this.entities.has(entityId)) return;
+
+  this.entities.delete(entityId);
+
+  for (const store of this.componentStores.values()) {
+    store.delete(entityId);
+  }
+}
 
   getEntitiesWith(...componentTypes: ComponentType<any>[]): number[] {
     const matches: number[] = [];
