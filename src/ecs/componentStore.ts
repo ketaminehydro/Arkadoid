@@ -1,27 +1,25 @@
-export class ComponentStore<T = unknown> {
-  private store: Map<number, T>;
+import type { EntityId } from './entity';
+
+export class ComponentStore<T> {
+  private store: Map<EntityId, T>;
 
   constructor() {
     this.store = new Map();
   }
 
-  set(entityId: number, component: T): void {
+  set(entityId: EntityId, component: T): void {
     this.store.set(entityId, component);
   }
 
-  get(entityId: number): T | undefined {
+  get(entityId: EntityId): T | undefined {
     return this.store.get(entityId);
   }
 
-  has(entityId: number): boolean {
+  has(entityId: EntityId): boolean {
     return this.store.has(entityId);
   }
 
-  delete(entityId: number): void {
+  delete(entityId: EntityId): void {
     this.store.delete(entityId);
-  }
-
-  entries(): IterableIterator<[number, T]> {
-    return this.store.entries();
   }
 }

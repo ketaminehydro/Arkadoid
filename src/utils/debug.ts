@@ -1,28 +1,21 @@
+import { Body, Camera, Position } from '../components';
+import type { ComponentType } from '../ecs/component.js';
 import { World } from '../ecs/world.js';
-import { Camera, Position, Body } from '../utils/componentTypes.js';
 
-/**
- * Expose runtime debug access to the browser console.
- * Allows inspecting world, entities, and cameras.
- */
 export function setupDebug(world: World, entities: Record<string, number>): void {
-  // Create a global DEBUG object
-  (window as any).DEBUG = {
+  (window as Window & { DEBUG?: unknown }).DEBUG = {
     world,
     entities,
-
-    // Helper to get component by entity name
-    getComponent(entityName: string, componentClass: any) {
+    getComponent<T>(entityName: string, componentType: ComponentType<T>): T | null {
       const entityId = entities[entityName];
       if (entityId === undefined) {
         console.warn(`Entity "${entityName}" not found`);
         return null;
       }
-      return world.getComponent(entityId, componentClass);
-    },
 
-    // Helper to log all entities
-    logEntities() {
+      return world.getComponent(entityId, componentType) ?? null;
+    },
+    logEntities(): void {
       console.table(
         Object.entries(entities).map(([name, id]) => ({
           name,

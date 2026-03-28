@@ -1,4 +1,5 @@
-import type { PositionComponent, SpriteComponent } from '../utils/componentTypes.js';
+import type { PositionComponent } from '../components/position.js';
+import type { SpriteComponent } from '../components/sprite.js';
 
 interface Renderer {
   clear: () => void;

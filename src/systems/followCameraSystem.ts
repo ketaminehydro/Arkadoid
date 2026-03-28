@@ -1,23 +1,32 @@
-import type { World } from '../ecs/world.js';
-import type { System } from '../ecs/system';
 import { Camera, Position } from '../components';
-export const followCameraSystem: System = {
-  name: "followCameraSystem",
-  priority: 50,
-  update: (world: World, deltaTime: number): void => {
-    const cameras = world.getEntitiesWith(Camera);
-    
-    for (const entity of cameras) {
-      const camera = world.getComponent(entity, Camera);
-      
-      if (!camera || camera.mode !== "follow" || camera.target === undefined) continue;
+import type { System } from '../ecs/system';
+import type { World } from '../ecs/world';
 
-      const targetPos = world.getComponent(camera.target, Position);
-      if (!targetPos) continue;
+interface FollowCameraSystemConfig {
+  world: World;
+}
 
-      camera.position.x = targetPos.x;
-      camera.position.y = targetPos.y;
+export function createFollowCameraSystem(config: FollowCameraSystemConfig): System {
+  const cameraEntities = config.world.createQuery(Camera);
 
+  return {
+    name: 'followCameraSystem',
+    priority: 50,
+    update(world: World): void {
+      for (const entityId of cameraEntities.entities) {
+        const camera = world.getComponent(entityId, Camera)!;
+        if (camera.mode !== 'follow' || camera.target === undefined) {
+          continue;
+        }
+
+        const targetPosition = world.getComponent(camera.target, Position);
+        if (!targetPosition) {
+          continue;
+        }
+
+        camera.position.x = targetPosition.x;
+        camera.position.y = targetPosition.y;
+      }
     }
-  }
-};
+  };
+}

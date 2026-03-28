@@ -1,14 +1,10 @@
-import { setupInput } from './core/input.js';
 import { createGameLoop } from './core/gameLoop.js';
+import { setupInput } from './core/input.js';
+import { createRenderer, VIRTUAL_RESOLUTION } from './rendering/renderer.js';
 import { loadLevel1 } from './scenes/level1.js';
 import { createRenderSystem } from './systems/renderSystem.js';
-import { createRenderer, VIRTUAL_RESOLUTION } from './rendering/renderer.js';
-import { setupDebug } from './utils/debug.js';
 
-/* The main entry point for the game */
 async function bootstrap(): Promise<void> {
-
-  // Canvas and WebGL context setup
   const canvas = document.getElementById('game');
   if (!(canvas instanceof HTMLCanvasElement)) {
     throw new Error('Game canvas is not available.');
@@ -19,14 +15,11 @@ async function bootstrap(): Promise<void> {
     throw new Error('WebGL context is not available.');
   }
 
-  // Input handler setup
   setupInput();
 
-  // Load the first level and initialize the game world
   const level = await loadLevel1();
-  const { world, playerId, followCameraId, overviewCameraId, worldSize } = level;
+  const { world, followCameraId, overviewCameraId, worldSize } = level;
 
-  // Renderer 
   const renderer = createRenderer(gl, canvas, {
     worldBounds: worldSize,
     viewports: [
@@ -49,29 +42,8 @@ async function bootstrap(): Promise<void> {
 
   window.addEventListener('resize', renderer.resizeToWindow);
 
-  // Add rendererSystem to the world
-  world.addSystem(
-    createRenderSystem({
-      renderer
-    })
-  );
+  world.addSystem(createRenderSystem({ renderer }));
 
-
-  // Setup debug access to the world and entities
-  /*  
-  const entities = {
-    player: playerId,
-    followCamera: followCameraId,
-    overviewCamera: overviewCameraId
-  };
-
-  // Expose debug helpers
-  setupDebug(world, entities);
-  */
-
-
-  
-  // Start the game loop (loop is of type GameLoop)
   const loop = createGameLoop((deltaTime: number) => {
     world.runSystems(deltaTime);
   });

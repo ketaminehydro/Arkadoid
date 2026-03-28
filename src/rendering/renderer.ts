@@ -1,13 +1,15 @@
+import { Body } from '../components/body';
+import { Camera, type CameraComponent } from '../components/camera';
+import { Position } from '../components/position';
 import type { World } from '../ecs/world';
-import { Camera, CameraComponent } from '../components/camera';
-import { Position, PositionComponent } from '../components/position';
-import { Body, BodyComponent } from '../components/body';
-import type { Viewport } from './viewport';
 import { getPixelsPerMeter } from './cameraMath';
+import type { Viewport } from './viewport';
 import type { WorldBounds } from './worldBounds';
 
-const VIRTUAL_WIDTH = 960;
-const VIRTUAL_HEIGHT = 540;
+export const VIRTUAL_RESOLUTION = {
+  width: 960,
+  height: 540
+} as const;
 
 interface RenderConfig {
   viewports: Viewport[];
@@ -15,8 +17,8 @@ interface RenderConfig {
 }
 
 export interface GameRenderer {
-  render: (world: World) => void;
-  resizeToWindow: () => void;
+  render(world: World): void;
+  resizeToWindow(): void;
 }
 
 export function createRenderer(
@@ -24,17 +26,18 @@ export function createRenderer(
   canvas: HTMLCanvasElement,
   config: RenderConfig
 ): GameRenderer {
-  const virtualCanvas = document.createElement('canvas');  // internal offscreen canvas for rendering the game world at a fixed resolution before scaling to fit the window
-  virtualCanvas.width = VIRTUAL_WIDTH;
-  virtualCanvas.height = VIRTUAL_HEIGHT;
+  const virtualCanvas = document.createElement('canvas');
+  virtualCanvas.width = VIRTUAL_RESOLUTION.width;
+  virtualCanvas.height = VIRTUAL_RESOLUTION.height;
 
   const virtualContext = virtualCanvas.getContext('2d');
   if (!virtualContext) {
     throw new Error('Virtual 2D context is not available.');
   }
-  const ctx = virtualContext; // create a new variable so that TypeScript enforces that ctx is of type CanvasRenderingContext2D and not null due to the previous check
-
+  const ctx = virtualContext;
   ctx.imageSmoothingEnabled = false;
+
+  const bodyQueryByWorld = new WeakMap<World, ReturnType<World['createQuery']>>();
 
   const program = createProgram(gl, VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE);
   const positionBuffer = gl.createBuffer();
@@ -59,21 +62,37 @@ export function createRenderer(
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, VIRTUAL_WIDTH, VIRTUAL_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    VIRTUAL_RESOLUTION.width,
+    VIRTUAL_RESOLUTION.height,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    null
+  );
 
   let scale = 1;
   let drawX = 0;
   let drawY = 0;
-  let drawWidth = VIRTUAL_WIDTH;
-  let drawHeight = VIRTUAL_HEIGHT;
+  let drawWidth = VIRTUAL_RESOLUTION.width;
+  let drawHeight = VIRTUAL_RESOLUTION.height;
 
   function resizeToWindow(): void {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    scale = Math.max(1, Math.floor(Math.min(canvas.width / VIRTUAL_WIDTH, canvas.height / VIRTUAL_HEIGHT)));
-    drawWidth = VIRTUAL_WIDTH * scale;
-    drawHeight = VIRTUAL_HEIGHT * scale;
+    scale = Math.max(
+      1,
+      Math.floor(
+        Math.min(canvas.width / VIRTUAL_RESOLUTION.width, canvas.height / VIRTUAL_RESOLUTION.height)
+      )
+    );
+
+    drawWidth = VIRTUAL_RESOLUTION.width * scale;
+    drawHeight = VIRTUAL_RESOLUTION.height * scale;
     drawX = Math.floor((canvas.width - drawWidth) * 0.5);
     drawY = Math.floor((canvas.height - drawHeight) * 0.5);
   }
@@ -81,11 +100,12 @@ export function createRenderer(
   function render(world: World): void {
     clearVirtualSurface();
 
+    const bodyEntities = getBodyQuery(world).entities;
+
     for (const viewport of config.viewports) {
-      renderViewport(world, viewport);
+      renderViewport(world, viewport, bodyEntities);
     }
 
-    // Upload virtual canvas into a WebGL texture and draw it letterboxed to screen.
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -97,23 +117,8 @@ export function createRenderer(
     const x2 = drawX + drawWidth;
     const y2 = drawY + drawHeight;
 
-    const positions = new Float32Array([
-      x1, y1,
-      x2, y1,
-      x1, y2,
-      x1, y2,
-      x2, y1,
-      x2, y2
-    ]);
-
-    const texcoords = new Float32Array([
-      0, 0,
-      1, 0,
-      0, 1,
-      0, 1,
-      1, 0,
-      1, 1
-    ]);
+    const positions = new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]);
+    const texcoords = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
@@ -136,12 +141,23 @@ export function createRenderer(
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
-  function clearVirtualSurface(): void {
-    ctx.fillStyle = '#05070a';
-    ctx.fillRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+  function getBodyQuery(world: World): ReturnType<World['createQuery']> {
+    const cachedQuery = bodyQueryByWorld.get(world);
+    if (cachedQuery) {
+      return cachedQuery;
+    }
+
+    const query = world.createQuery(Position, Body);
+    bodyQueryByWorld.set(world, query);
+    return query;
   }
 
-  function renderViewport(world: World, viewport: Viewport): void {
+  function clearVirtualSurface(): void {
+    ctx.fillStyle = '#05070a';
+    ctx.fillRect(0, 0, VIRTUAL_RESOLUTION.width, VIRTUAL_RESOLUTION.height);
+  }
+
+  function renderViewport(world: World, viewport: Viewport, bodyEntities: number[]): void {
     const camera = world.getComponent(viewport.cameraId, Camera);
     if (!camera) {
       return;
@@ -159,7 +175,7 @@ export function createRenderer(
     ctx.strokeRect(viewport.x + 1, viewport.y + 1, viewport.width - 2, viewport.height - 2);
 
     drawWorldBounds(viewport, camera, config.worldBounds);
-    drawBodies(world, viewport, camera);
+    drawBodies(world, viewport, camera, bodyEntities);
 
     ctx.restore();
   }
@@ -178,18 +194,20 @@ export function createRenderer(
     );
   }
 
-  function drawBodies(world: World, viewport: Viewport, camera: CameraComponent): void {
-    for (const entityId of world.getEntitiesWith(Position, Body)) {
-      const position = world.getComponent<PositionComponent>(entityId, Position);
-      const body = world.getComponent<BodyComponent>(entityId, Body);
-      if (!position || !body) {
-        continue;
-      }
+  function drawBodies(
+    world: World,
+    viewport: Viewport,
+    camera: CameraComponent,
+    bodyEntities: number[]
+  ): void {
+    for (const entityId of bodyEntities) {
+      const position = world.getComponent(entityId, Position)!;
+      const body = world.getComponent(entityId, Body)!;
 
-      const ppm = getPixelsPerMeter(camera);
+      const pixelsPerMeter = getPixelsPerMeter(camera);
       const center = worldToViewportPixels(position, camera, viewport);
-      const pixelWidth = body.width * ppm;
-      const pixelHeight = body.height * ppm;
+      const pixelWidth = body.width * pixelsPerMeter;
+      const pixelHeight = body.height * pixelsPerMeter;
 
       ctx.fillStyle = body.color;
       ctx.fillRect(
@@ -208,7 +226,6 @@ export function createRenderer(
   ): { x: number; y: number } {
     const pixelsPerMeter = getPixelsPerMeter(camera);
 
-    // WORLD (meters) -> CAMERA (meters) -> pixels -> viewport center on virtual canvas.
     return {
       x: (worldPositionMeters.x - camera.position.x) * pixelsPerMeter + viewport.x + viewport.width * 0.5,
       y: (worldPositionMeters.y - camera.position.y) * pixelsPerMeter + viewport.y + viewport.height * 0.5
@@ -217,10 +234,7 @@ export function createRenderer(
 
   resizeToWindow();
 
-  return {
-    render,
-    resizeToWindow
-  };
+  return { render, resizeToWindow };
 }
 
 function createShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader {
@@ -268,30 +282,25 @@ function createProgram(
 }
 
 const VERTEX_SHADER_SOURCE = `
-  attribute vec2 a_position;
-  attribute vec2 a_texcoord;
-  uniform vec2 u_resolution;
-  varying vec2 v_texcoord;
+attribute vec2 a_position;
+attribute vec2 a_texcoord;
+uniform vec2 u_resolution;
+varying vec2 v_texcoord;
 
-  void main() {
-    vec2 zeroToOne = a_position / u_resolution;
-    vec2 clipSpace = zeroToOne * 2.0 - 1.0;
-    gl_Position = vec4(clipSpace * vec2(1.0, -1.0), 0.0, 1.0);
-    v_texcoord = a_texcoord;
-  }
+void main() {
+  vec2 zeroToOne = a_position / u_resolution;
+  vec2 clipSpace = zeroToOne * 2.0 - 1.0;
+  gl_Position = vec4(clipSpace * vec2(1.0, -1.0), 0.0, 1.0);
+  v_texcoord = a_texcoord;
+}
 `;
 
 const FRAGMENT_SHADER_SOURCE = `
-  precision mediump float;
-  varying vec2 v_texcoord;
-  uniform sampler2D u_texture;
+precision mediump float;
+varying vec2 v_texcoord;
+uniform sampler2D u_texture;
 
-  void main() {
-    gl_FragColor = texture2D(u_texture, v_texcoord);
-  }
+void main() {
+  gl_FragColor = texture2D(u_texture, v_texcoord);
+}
 `;
-
-export const VIRTUAL_RESOLUTION = {
-  width: VIRTUAL_WIDTH,
-  height: VIRTUAL_HEIGHT
-};
