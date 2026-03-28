@@ -1,6 +1,6 @@
+import { Position, Sprite, Velocity, createPosition, createSprite, createVelocity } from '../components';
+import type { EntityId } from '../ecs/entity.js';
 import type { World } from '../ecs/world.js';
-
-import { Position, createPosition, Velocity, createVelocity, Sprite, createSprite } from '../components';
 
 interface PlayerConfig {
   x: number;
@@ -8,7 +8,7 @@ interface PlayerConfig {
   image: HTMLImageElement;
 }
 
-export function createPlayer(world: World, { x, y, image }: PlayerConfig): number {
+export function createPlayer(world: World, { x, y, image }: PlayerConfig): EntityId {
   const playerId = world.createEntity();
 
   world.addComponent(playerId, Position, createPosition(x, y));

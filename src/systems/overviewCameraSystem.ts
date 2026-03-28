@@ -1,21 +1,32 @@
-import type { World } from '../ecs/world.js';
-import type { System } from '../ecs/system';
 import { Camera } from '../components';
-export const overviewCameraSystem : System = {
-  name: "overviewCameraSystem",
-  priority: 50,
-  update: () => {
-    return (world: World): void => {
-      const cameras = world.getEntitiesWith(Camera);
+import type { System } from '../ecs/system';
+import type { World } from '../ecs/world';
 
-      for (const entity of cameras) {
-        const camera = world.getComponent(entity, Camera);
+interface OverviewCameraSystemConfig {
+  world: World;
+  worldWidth: number;
+  worldHeight: number;
+}
 
-        if (camera?.mode !== "overview") continue;
+export function createOverviewCameraSystem(config: OverviewCameraSystemConfig): System {
+  const cameraEntities = config.world.createQuery(Camera);
 
-        camera.position.x = 200 * 0.5;  // TODO: use world size instead of hardcoded values
-        camera.position.y = 100 * 0.5;
+  return {
+    name: 'overviewCameraSystem',
+    priority: 50,
+    update(world: World): void {
+      const centerX = config.worldWidth * 0.5;
+      const centerY = config.worldHeight * 0.5;
+
+      for (const entityId of cameraEntities.entities) {
+        const camera = world.getComponent(entityId, Camera)!;
+        if (camera.mode !== 'overview') {
+          continue;
+        }
+
+        camera.position.x = centerX;
+        camera.position.y = centerY;
       }
-    };
-  }
-};
+    }
+  };
+}

@@ -1,6 +1,6 @@
-import type { World } from '../ecs/world';
 import type { System } from '../ecs/system';
-import type { GameRenderer } from '../rendering/renderer';
+import type { World } from '../ecs/world';
+import type { GameRenderer } from '../rendering/renderer.js';
 
 interface RenderSystemConfig {
   renderer: GameRenderer;
@@ -8,9 +8,9 @@ interface RenderSystemConfig {
 
 export function createRenderSystem(config: RenderSystemConfig): System {
   return {
-    name: "renderSystem",
+    name: 'renderSystem',
     priority: 100,
-    update: (world: World, deltaTime: number): void => {
+    update(world: World): void {
       config.renderer.render(world);
     }
   };
