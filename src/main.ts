@@ -2,7 +2,7 @@ import { setupInput } from './core/input.js';
 import { createGameLoop } from './core/gameLoop.js';
 import { loadLevel1 } from './scenes/level1.js';
 import { createRenderSystem } from './systems/renderSystem.js';
-import { createRenderer, VIRTUAL_RESOLUTION } from './rendering/Renderer.js';
+import { createRenderer, VIRTUAL_RESOLUTION } from './rendering/renderer.js';
 import { setupDebug } from './utils/debug.js';
 
 /* The main entry point for the game */
@@ -52,11 +52,7 @@ async function bootstrap(): Promise<void> {
   // Add rendererSystem to the world
   world.addSystem(
     createRenderSystem({
-      renderer,
-      playerId,
-      followCameraId,
-      overviewCameraId,
-      worldSize
+      renderer
     })
   );
 

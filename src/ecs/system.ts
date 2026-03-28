@@ -1,4 +1,4 @@
-// This file serves only to formalise the System.
+// This file serves only to formalise the System structure.
 
 import type { World } from './world';
 export interface System {

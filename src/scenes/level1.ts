@@ -12,6 +12,8 @@ import { Body, createBody,
 import { playerControlSystem } from '../systems/playerControlSystem.js';
 import { movementSystem } from '../systems/movementSystem.js';
 import { collisionSystem } from '../systems/collisionSystem.js';
+import { overviewCameraSystem } from '../systems/overviewCameraSystem.js';
+import { followCameraSystem } from '../systems/followCameraSystem.js';
 
 /* helper functions */
 function randomRange(min: number, max: number): number {
@@ -67,15 +69,17 @@ export async function loadLevel1(): Promise<Level1> {
 
   // Cameras 
   const followCameraId = world.createEntity();
-  world.addComponent(followCameraId, Camera, createCamera(50, 50, 2, 15, 8.4375));
+  world.addComponent(followCameraId, Camera, createCamera({x: 50, y: 50}, 2, "follow", playerId));
 
   const overviewCameraId = world.createEntity();
-  world.addComponent(overviewCameraId, Camera, createCamera(50, 50, 0.15, 100, 100));
+  world.addComponent(overviewCameraId, Camera, createCamera({x: 50, y: 50}, 0.15, "overview"));
 
+  // Systems
   world.addSystem(playerControlSystem);
   world.addSystem(collisionSystem);
   world.addSystem(movementSystem);
-
+  world.addSystem(followCameraSystem);
+  world.addSystem(overviewCameraSystem);
 
   return {
     world,

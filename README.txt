@@ -164,7 +164,12 @@ systems/         → gameplay + render system
 rendering/       → WebGL stuff
 main.ts          → wires everything together
 
+_________________________________
 
+Input → Simulation → State → Rendering
+Camera position = state
+Camera behavior = simulation
+Rendering = pure read
 
 /*****************************************************************
    Entity Component System (ECS) structure

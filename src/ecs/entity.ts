@@ -1,2 +1,2 @@
-// This file serves only to formalise the Entity.
+// This file serves only to formalise the Entitystructure.
 export type EntityId = number;

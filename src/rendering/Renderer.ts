@@ -1,8 +1,10 @@
-import type { World } from '../ecs/world.js';
-import { Body, Camera, Position } from '../components';
-import type { Viewport } from './Viewport.js';
-import { getPixelsPerMeter } from './Camera.js';
-import type { WorldBounds } from './World.js';
+import type { World } from '../ecs/world';
+import { Camera, CameraComponent } from '../components/camera';
+import { Position, PositionComponent } from '../components/position';
+import { Body, BodyComponent } from '../components/body';
+import type { Viewport } from './viewport';
+import { getPixelsPerMeter } from './cameraMath';
+import type { WorldBounds } from './worldBounds';
 
 const VIRTUAL_WIDTH = 960;
 const VIRTUAL_HEIGHT = 540;
@@ -22,7 +24,7 @@ export function createRenderer(
   canvas: HTMLCanvasElement,
   config: RenderConfig
 ): GameRenderer {
-  const virtualCanvas = document.createElement('canvas');
+  const virtualCanvas = document.createElement('canvas');  // internal offscreen canvas for rendering the game world at a fixed resolution before scaling to fit the window
   virtualCanvas.width = VIRTUAL_WIDTH;
   virtualCanvas.height = VIRTUAL_HEIGHT;
 
@@ -30,8 +32,9 @@ export function createRenderer(
   if (!virtualContext) {
     throw new Error('Virtual 2D context is not available.');
   }
+  const ctx = virtualContext; // create a new variable so that TypeScript enforces that ctx is of type CanvasRenderingContext2D and not null due to the previous check
 
-  virtualContext.imageSmoothingEnabled = false;
+  ctx.imageSmoothingEnabled = false;
 
   const program = createProgram(gl, VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE);
   const positionBuffer = gl.createBuffer();
@@ -134,8 +137,8 @@ export function createRenderer(
   }
 
   function clearVirtualSurface(): void {
-    virtualContext.fillStyle = '#05070a';
-    virtualContext.fillRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+    ctx.fillStyle = '#05070a';
+    ctx.fillRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
   }
 
   function renderViewport(world: World, viewport: Viewport): void {
@@ -144,30 +147,30 @@ export function createRenderer(
       return;
     }
 
-    virtualContext.save();
-    virtualContext.beginPath();
-    virtualContext.rect(viewport.x, viewport.y, viewport.width, viewport.height);
-    virtualContext.clip();
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(viewport.x, viewport.y, viewport.width, viewport.height);
+    ctx.clip();
 
-    virtualContext.fillStyle = '#0f1720';
-    virtualContext.fillRect(viewport.x, viewport.y, viewport.width, viewport.height);
-    virtualContext.strokeStyle = '#324156';
-    virtualContext.lineWidth = 2;
-    virtualContext.strokeRect(viewport.x + 1, viewport.y + 1, viewport.width - 2, viewport.height - 2);
+    ctx.fillStyle = '#0f1720';
+    ctx.fillRect(viewport.x, viewport.y, viewport.width, viewport.height);
+    ctx.strokeStyle = '#324156';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(viewport.x + 1, viewport.y + 1, viewport.width - 2, viewport.height - 2);
 
     drawWorldBounds(viewport, camera, config.worldBounds);
     drawBodies(world, viewport, camera);
 
-    virtualContext.restore();
+    ctx.restore();
   }
 
   function drawWorldBounds(viewport: Viewport, camera: CameraComponent, bounds: WorldBounds): void {
     const topLeft = worldToViewportPixels({ x: 0, y: 0 }, camera, viewport);
     const bottomRight = worldToViewportPixels({ x: bounds.width, y: bounds.height }, camera, viewport);
 
-    virtualContext.strokeStyle = '#5f7ca0';
-    virtualContext.lineWidth = 1;
-    virtualContext.strokeRect(
+    ctx.strokeStyle = '#5f7ca0';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(
       Math.round(topLeft.x),
       Math.round(topLeft.y),
       Math.round(bottomRight.x - topLeft.x),
@@ -188,8 +191,8 @@ export function createRenderer(
       const pixelWidth = body.width * ppm;
       const pixelHeight = body.height * ppm;
 
-      virtualContext.fillStyle = body.color;
-      virtualContext.fillRect(
+      ctx.fillStyle = body.color;
+      ctx.fillRect(
         Math.round(center.x - pixelWidth * 0.5),
         Math.round(center.y - pixelHeight * 0.5),
         Math.round(pixelWidth),

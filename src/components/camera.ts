@@ -1,11 +1,11 @@
 /* TYPE */
 import { ComponentType } from '../ecs/component';
+import { EntityId } from '../ecs/entity';
 export interface CameraComponent {
-  x: number; // meters
-  y: number; // meters
+  position: { x: number; y: number }; // meters
   zoom: number; // factor
-  viewWidth: number; // meters
-  viewHeight: number; // meters
+  mode: "follow" | "overview"; // determines how the camera behaves
+  target?: EntityId; // entity ID to follow (only for "follow" mode)
 }
 
 /* SYMBOL */
@@ -14,17 +14,15 @@ export const Camera: ComponentType<CameraComponent> =
 
 /* FACTORY */
 export function createCamera(
-  x: number,
-  y: number,
+  position: { x: number; y: number }, // meters
   zoom: number,
-  viewWidth: number,
-  viewHeight: number
+  mode : "follow" | "overview",
+  target?: EntityId
 ): CameraComponent {
   return {
-    x, 
-    y,
+    position,
     zoom,
-    viewWidth,
-    viewHeight
+    mode,
+    target
   };
 }

@@ -28,8 +28,8 @@ export class World {
   }
 
   getComponent<T>(entityId: EntityId, componentType: ComponentType<T>): T | undefined {
-  return this.componentStores.get(componentType)?.get(entityId) as T | undefined;
-}
+    return this.componentStores.get(componentType)?.get(entityId) as T | undefined;
+  }
 
   removeComponent(entityId: EntityId, componentType: ComponentType<any>): void {
     this.componentStores.get(componentType)?.delete(entityId);
