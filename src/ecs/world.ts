@@ -5,7 +5,7 @@ import type { Query, QueryRecord } from './query';
 import type { System } from './system';
 
 export class World {
-  nextEntityId: EntityId;
+  nextEntityId: EntityId; // Incrementing counter for generating unique entity IDs
   entities: Set<EntityId>;
   componentStores: Map<ComponentType<unknown>, ComponentStore<unknown>>;
 

@@ -1,3 +1,4 @@
+import { Sprite } from '../components';
 import { Body } from '../components/body';
 import { Camera, type CameraComponent } from '../components/camera';
 import { Position } from '../components/position';
@@ -209,13 +210,25 @@ export function createRenderer(
       const pixelWidth = body.width * pixelsPerMeter;
       const pixelHeight = body.height * pixelsPerMeter;
 
-      ctx.fillStyle = body.color;
-      ctx.fillRect(
-        Math.round(center.x - pixelWidth * 0.5),
-        Math.round(center.y - pixelHeight * 0.5),
-        Math.round(pixelWidth),
-        Math.round(pixelHeight)
-      );
+      // Sprite
+      const sprite = world.getComponent(entityId, Sprite); 
+      if (sprite?.image) {
+        ctx.drawImage(
+          sprite.image,
+          Math.round(center.x - pixelWidth * 0.5),
+          Math.round(center.y - pixelHeight * 0.5),
+          Math.round(pixelWidth),
+          Math.round(pixelHeight)
+        );
+      } else { // fallback if image somehow not available 
+        ctx.fillStyle = body.color;
+        ctx.fillRect(
+          Math.round(center.x - pixelWidth * 0.5),
+          Math.round(center.y - pixelHeight * 0.5),
+          Math.round(pixelWidth),
+          Math.round(pixelHeight)
+        );
+      }
     }
   }
 
