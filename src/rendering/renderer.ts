@@ -4,6 +4,8 @@ import { Camera, type CameraComponent } from '../components/camera';
 import { Position } from '../components/position';
 import type { World } from '../ecs/world';
 import { getPixelsPerMeter } from './cameraMath';
+import { BLIT_FRAGMENT_SHADER_SOURCE } from './shaders/blit.fragment';
+import { FULLSCREEN_VERTEX_SHADER_SOURCE } from './shaders/fullscreen.vertex';
 import type { Viewport } from './viewport';
 import type { WorldBounds } from './worldBounds';
 
@@ -15,6 +17,27 @@ export const VIRTUAL_RESOLUTION = {
 interface RenderConfig {
   viewports: Viewport[];
   worldBounds: WorldBounds;
+}
+
+interface RenderItem {
+  position: { x: number; y: number };
+  size: { x: number; y: number };
+  rotation: number;
+  image?: HTMLImageElement;
+  color?: string;
+}
+
+interface ShaderPass {
+  program: WebGLProgram;
+  positionLocation: number;
+  texcoordLocation: number;
+  resolutionLocation: WebGLUniformLocation;
+  textureLocation: WebGLUniformLocation;
+}
+
+interface RenderTarget {
+  texture: WebGLTexture;
+  framebuffer: WebGLFramebuffer;
 }
 
 export interface GameRenderer {
@@ -40,40 +63,23 @@ export function createRenderer(
 
   const bodyQueryByWorld = new WeakMap<World, ReturnType<World['createQuery']>>();
 
-  const program = createProgram(gl, VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE);
+  const blitTexture = createTexture(gl, VIRTUAL_RESOLUTION.width, VIRTUAL_RESOLUTION.height);
+  const ping = createRenderTarget(gl, VIRTUAL_RESOLUTION.width, VIRTUAL_RESOLUTION.height);
+  const pong = createRenderTarget(gl, VIRTUAL_RESOLUTION.width, VIRTUAL_RESOLUTION.height);
+
   const positionBuffer = gl.createBuffer();
   const texcoordBuffer = gl.createBuffer();
-  const blitTexture = gl.createTexture();
-
-  if (!positionBuffer || !texcoordBuffer || !blitTexture) {
+  if (!positionBuffer || !texcoordBuffer) {
     throw new Error('Unable to create WebGL resources.');
   }
 
-  const positionLocation = gl.getAttribLocation(program, 'a_position');
-  const texcoordLocation = gl.getAttribLocation(program, 'a_texcoord');
-  const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-  const textureLocation = gl.getUniformLocation(program, 'u_texture');
-
-  if (!resolutionLocation || !textureLocation) {
-    throw new Error('Unable to find required WebGL uniforms.');
-  }
-
-  gl.bindTexture(gl.TEXTURE_2D, blitTexture);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0,
-    gl.RGBA,
-    VIRTUAL_RESOLUTION.width,
-    VIRTUAL_RESOLUTION.height,
-    0,
-    gl.RGBA,
-    gl.UNSIGNED_BYTE,
-    null
+  const blitPass = createShaderPass(
+    gl,
+    FULLSCREEN_VERTEX_SHADER_SOURCE,
+    BLIT_FRAGMENT_SHADER_SOURCE
   );
+
+  const pipeline: ShaderPass[] = [blitPass];
 
   let scale = 1;
   let drawX = 0;
@@ -111,33 +117,83 @@ export function createRenderer(
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    gl.useProgram(program);
+    gl.bindTexture(gl.TEXTURE_2D, blitTexture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, virtualCanvas);
 
-    const x1 = drawX;
-    const y1 = drawY;
-    const x2 = drawX + drawWidth;
-    const y2 = drawY + drawHeight;
+    executePipeline(blitTexture);
+  }
+
+  function executePipeline(initialTexture: WebGLTexture): void {
+    let inputTexture = initialTexture;
+
+    for (let index = 0; index < pipeline.length; index += 1) {
+      const pass = pipeline[index];
+      const isFinalPass = index === pipeline.length - 1;
+
+      if (isFinalPass) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        drawPass(pass, inputTexture, {
+          x: drawX,
+          y: drawY,
+          width: drawWidth,
+          height: drawHeight,
+          resolutionWidth: canvas.width,
+          resolutionHeight: canvas.height
+        });
+      } else {
+        const outputTarget = index % 2 === 0 ? ping : pong;
+        gl.bindFramebuffer(gl.FRAMEBUFFER, outputTarget.framebuffer);
+        drawPass(pass, inputTexture, {
+          x: 0,
+          y: 0,
+          width: VIRTUAL_RESOLUTION.width,
+          height: VIRTUAL_RESOLUTION.height,
+          resolutionWidth: VIRTUAL_RESOLUTION.width,
+          resolutionHeight: VIRTUAL_RESOLUTION.height
+        });
+        inputTexture = outputTarget.texture;
+      }
+    }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+
+  function drawPass(
+    pass: ShaderPass,
+    inputTexture: WebGLTexture,
+    outputRect: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      resolutionWidth: number;
+      resolutionHeight: number;
+    }
+  ): void {
+    gl.useProgram(pass.program);
+
+    const x1 = outputRect.x;
+    const y1 = outputRect.y;
+    const x2 = outputRect.x + outputRect.width;
+    const y2 = outputRect.y + outputRect.height;
 
     const positions = new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]);
     const texcoords = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
-    gl.enableVertexAttribArray(positionLocation);
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(pass.positionLocation);
+    gl.vertexAttribPointer(pass.positionLocation, 2, gl.FLOAT, false, 0, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, texcoords, gl.DYNAMIC_DRAW);
-    gl.enableVertexAttribArray(texcoordLocation);
-    gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(pass.texcoordLocation);
+    gl.vertexAttribPointer(pass.texcoordLocation, 2, gl.FLOAT, false, 0, 0);
 
-    gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+    gl.uniform2f(pass.resolutionLocation, outputRect.resolutionWidth, outputRect.resolutionHeight);
 
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, blitTexture);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, virtualCanvas);
-    gl.uniform1i(textureLocation, 0);
+    bindInputTexture(gl, pass, inputTexture, 0);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
@@ -151,6 +207,31 @@ export function createRenderer(
     const query = world.createQuery(Position, Body);
     bodyQueryByWorld.set(world, query);
     return query;
+  }
+
+  function extractRenderItems(world: World, bodyEntities: number[]): RenderItem[] {
+    const items: RenderItem[] = [];
+
+    for (const entityId of bodyEntities) {
+      const position = world.getComponent(entityId, Position);
+      const body = world.getComponent(entityId, Body);
+
+      if (!position || !body) {
+        continue;
+      }
+
+      const sprite = world.getComponent(entityId, Sprite);
+
+      items.push({
+        position: { x: position.x, y: position.y },
+        size: { x: body.width, y: body.height },
+        rotation: 0,
+        image: sprite?.image,
+        color: body.color
+      });
+    }
+
+    return items;
   }
 
   function clearVirtualSurface(): void {
@@ -176,7 +257,8 @@ export function createRenderer(
     ctx.strokeRect(viewport.x + 1, viewport.y + 1, viewport.width - 2, viewport.height - 2);
 
     drawWorldBounds(viewport, camera, config.worldBounds);
-    drawBodies(world, viewport, camera, bodyEntities);
+    const renderItems = extractRenderItems(world, bodyEntities);
+    drawRenderItems(viewport, camera, renderItems);
 
     ctx.restore();
   }
@@ -195,33 +277,27 @@ export function createRenderer(
     );
   }
 
-  function drawBodies(
-    world: World,
+  function drawRenderItems(
     viewport: Viewport,
     camera: CameraComponent,
-    bodyEntities: number[]
+    renderItems: RenderItem[]
   ): void {
-    for (const entityId of bodyEntities) {
-      const position = world.getComponent(entityId, Position)!;
-      const body = world.getComponent(entityId, Body)!;
-
+    for (const item of renderItems) {
       const pixelsPerMeter = getPixelsPerMeter(camera);
-      const center = worldToViewportPixels(position, camera, viewport);
-      const pixelWidth = body.width * pixelsPerMeter;
-      const pixelHeight = body.height * pixelsPerMeter;
+      const center = worldToViewportPixels(item.position, camera, viewport);
+      const pixelWidth = item.size.x * pixelsPerMeter;
+      const pixelHeight = item.size.y * pixelsPerMeter;
 
-      // Sprite
-      const sprite = world.getComponent(entityId, Sprite); 
-      if (sprite?.image) {
+      if (item.image) {
         ctx.drawImage(
-          sprite.image,
+          item.image,
           Math.round(center.x - pixelWidth * 0.5),
           Math.round(center.y - pixelHeight * 0.5),
           Math.round(pixelWidth),
           Math.round(pixelHeight)
         );
-      } else { // fallback if image somehow not available 
-        ctx.fillStyle = body.color;
+      } else {
+        ctx.fillStyle = item.color ?? '#ffffff';
         ctx.fillRect(
           Math.round(center.x - pixelWidth * 0.5),
           Math.round(center.y - pixelHeight * 0.5),
@@ -248,6 +324,79 @@ export function createRenderer(
   resizeToWindow();
 
   return { render, resizeToWindow };
+}
+
+function createShaderPass(
+  gl: WebGLRenderingContext,
+  vertexSource: string,
+  fragmentSource: string
+): ShaderPass {
+  const program = createProgram(gl, vertexSource, fragmentSource);
+
+  const positionLocation = gl.getAttribLocation(program, 'a_position');
+  const texcoordLocation = gl.getAttribLocation(program, 'a_texcoord');
+  const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+  const textureLocation = gl.getUniformLocation(program, 'u_texture');
+
+  if (!resolutionLocation || !textureLocation) {
+    throw new Error('Unable to find required WebGL uniforms.');
+  }
+
+  return {
+    program,
+    positionLocation,
+    texcoordLocation,
+    resolutionLocation,
+    textureLocation
+  };
+}
+
+function bindInputTexture(
+  gl: WebGLRenderingContext,
+  pass: ShaderPass,
+  texture: WebGLTexture,
+  textureUnit: number
+): void {
+  gl.activeTexture(gl.TEXTURE0 + textureUnit);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.uniform1i(pass.textureLocation, textureUnit);
+}
+
+function createRenderTarget(gl: WebGLRenderingContext, width: number, height: number): RenderTarget {
+  const texture = createTexture(gl, width, height);
+  const framebuffer = gl.createFramebuffer();
+
+  if (!framebuffer) {
+    throw new Error('Unable to create framebuffer.');
+  }
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+
+  const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+  if (status !== gl.FRAMEBUFFER_COMPLETE) {
+    throw new Error('Unable to initialize framebuffer.');
+  }
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+  return { texture, framebuffer };
+}
+
+function createTexture(gl: WebGLRenderingContext, width: number, height: number): WebGLTexture {
+  const texture = gl.createTexture();
+  if (!texture) {
+    throw new Error('Unable to create texture.');
+  }
+
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+  return texture;
 }
 
 function createShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader {
@@ -293,27 +442,3 @@ function createProgram(
 
   return program;
 }
-
-const VERTEX_SHADER_SOURCE = `
-attribute vec2 a_position;
-attribute vec2 a_texcoord;
-uniform vec2 u_resolution;
-varying vec2 v_texcoord;
-
-void main() {
-  vec2 zeroToOne = a_position / u_resolution;
-  vec2 clipSpace = zeroToOne * 2.0 - 1.0;
-  gl_Position = vec4(clipSpace * vec2(1.0, -1.0), 0.0, 1.0);
-  v_texcoord = a_texcoord;
-}
-`;
-
-const FRAGMENT_SHADER_SOURCE = `
-precision mediump float;
-varying vec2 v_texcoord;
-uniform sampler2D u_texture;
-
-void main() {
-  gl_FragColor = texture2D(u_texture, v_texcoord);
-}
-`;
