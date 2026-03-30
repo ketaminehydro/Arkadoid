@@ -4,8 +4,14 @@ import { Camera, type CameraComponent } from '../components/camera';
 import { Position } from '../components/position';
 import type { World } from '../ecs/world';
 import { getPixelsPerMeter } from './cameraMath';
+
 import { BLIT_FRAGMENT_SHADER_SOURCE } from './shaders/blit.fragment';
+import { CRTSCANLINES_FRAGMENT_SHADER_SOURCE } from './shaders/crtScanLines.fragment';
+import { RAINBOW_FRAGMENT_SHADER_SOURCE } from './shaders/rainbow.fragment';
+import { UVDEBUG_FRAGMENT_SHADER_SOURCE } from './shaders/uvDebug.fragment';
+
 import { FULLSCREEN_VERTEX_SHADER_SOURCE } from './shaders/fullscreen.vertex';
+
 import type { Viewport } from './viewport';
 import type { WorldBounds } from './worldBounds';
 
@@ -31,8 +37,9 @@ interface ShaderPass {
   program: WebGLProgram;
   positionLocation: number;
   texcoordLocation: number;
-  resolutionLocation: WebGLUniformLocation;
-  textureLocation: WebGLUniformLocation;
+  resolutionLocation: WebGLUniformLocation | null;
+  textureLocation: WebGLUniformLocation | null;
+  timeLocation?: WebGLUniformLocation | null;
 }
 
 interface RenderTarget {
@@ -73,13 +80,32 @@ export function createRenderer(
     throw new Error('Unable to create WebGL resources.');
   }
 
+  // Shader passes can be added here to create a post-processing pipeline. 
   const blitPass = createShaderPass(
     gl,
     FULLSCREEN_VERTEX_SHADER_SOURCE,
     BLIT_FRAGMENT_SHADER_SOURCE
   );
 
-  const pipeline: ShaderPass[] = [blitPass];
+  const rainbowPass = createShaderPass(
+    gl,
+    FULLSCREEN_VERTEX_SHADER_SOURCE,
+    RAINBOW_FRAGMENT_SHADER_SOURCE
+  );
+
+  const crtScanLinesPass = createShaderPass(
+    gl,
+    FULLSCREEN_VERTEX_SHADER_SOURCE,
+    CRTSCANLINES_FRAGMENT_SHADER_SOURCE
+  );  
+
+  const uvDebugPass = createShaderPass(
+    gl,
+    FULLSCREEN_VERTEX_SHADER_SOURCE,
+    UVDEBUG_FRAGMENT_SHADER_SOURCE
+  );  
+
+  const pipeline: ShaderPass[] = [crtScanLinesPass, rainbowPass, blitPass];
 
   let scale = 1;
   let drawX = 0;
@@ -133,6 +159,8 @@ export function createRenderer(
 
       if (isFinalPass) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        
         drawPass(pass, inputTexture, {
           x: drawX,
           y: drawY,
@@ -144,6 +172,14 @@ export function createRenderer(
       } else {
         const outputTarget = index % 2 === 0 ? ping : pong;
         gl.bindFramebuffer(gl.FRAMEBUFFER, outputTarget.framebuffer);
+
+        // clear intermediate framebuffers
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        // correct viewport for texture size
+        gl.viewport(0, 0, VIRTUAL_RESOLUTION.width, VIRTUAL_RESOLUTION.height);
+
         drawPass(pass, inputTexture, {
           x: 0,
           y: 0,
@@ -183,17 +219,29 @@ export function createRenderer(
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
-    gl.enableVertexAttribArray(pass.positionLocation);
-    gl.vertexAttribPointer(pass.positionLocation, 2, gl.FLOAT, false, 0, 0);
+    if (pass.positionLocation !== -1) {
+      gl.enableVertexAttribArray(pass.positionLocation);
+      gl.vertexAttribPointer(pass.positionLocation, 2, gl.FLOAT, false, 0, 0);
+    }
 
     gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, texcoords, gl.DYNAMIC_DRAW);
-    gl.enableVertexAttribArray(pass.texcoordLocation);
-    gl.vertexAttribPointer(pass.texcoordLocation, 2, gl.FLOAT, false, 0, 0);
+    if (pass.texcoordLocation !== -1) {
+      gl.enableVertexAttribArray(pass.texcoordLocation);
+      gl.vertexAttribPointer(pass.texcoordLocation, 2, gl.FLOAT, false, 0, 0);
+    }
+    
+    if (pass.resolutionLocation) {
+      gl.uniform2f(pass.resolutionLocation, outputRect.resolutionWidth, outputRect.resolutionHeight);
+    }
 
-    gl.uniform2f(pass.resolutionLocation, outputRect.resolutionWidth, outputRect.resolutionHeight);
+    if (pass.timeLocation) {
+      gl.uniform1f(pass.timeLocation, performance.now() * 0.001);
+    }
 
-    bindInputTexture(gl, pass, inputTexture, 0);
+    if (pass.textureLocation) {
+      bindInputTexture(gl, pass, inputTexture, 0);
+    }
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
@@ -335,19 +383,18 @@ function createShaderPass(
 
   const positionLocation = gl.getAttribLocation(program, 'a_position');
   const texcoordLocation = gl.getAttribLocation(program, 'a_texcoord');
+
   const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
   const textureLocation = gl.getUniformLocation(program, 'u_texture');
-
-  if (!resolutionLocation || !textureLocation) {
-    throw new Error('Unable to find required WebGL uniforms.');
-  }
+  const timeLocation = gl.getUniformLocation(program, 'u_time');
 
   return {
     program,
     positionLocation,
     texcoordLocation,
     resolutionLocation,
-    textureLocation
+    textureLocation,
+    timeLocation
   };
 }
 
