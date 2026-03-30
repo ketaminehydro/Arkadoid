@@ -170,6 +170,47 @@ Input → Simulation → State → Rendering
 Camera position = state
 Camera behavior = simulation
 Rendering = pure read
+_________________________
+
+[CPU]
+ECS → Canvas2D → image
+
+[GPU]
+image → fullscreen quad → fragment shader → output
+
+Vertex shader job:
+Define WHERE pixels are drawn
+
+Fragment shader job:
+Define WHAT color each pixel becomes
+
+_________________________
+
+NOW
+ECS → Canvas2D → texture → shaders → screen
+
+NOW+1
+ECS → extract RenderItems → Canvas2D →...
+NOW+2
+ECS → extract RenderItems → GPU Buffers →...
+
+
+LATER
+ECS → GPU buffers → shaders → screen
+
+
+MENTAL MODEL
+1. Simulation (ECS)
+“Where is everything?”
+
+2. Extraction (RenderItems)
+“What should be drawn?”
+
+3. Projection (Renderer)
+“How is it drawn?”
+
+_________________________
+
 
 /*****************************************************************
    Entity Component System (ECS) structure
