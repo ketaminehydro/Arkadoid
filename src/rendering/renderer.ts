@@ -1,6 +1,6 @@
 import { Sprite } from '../components';
 import { Body } from '../components/body';
-import { Camera, type CameraComponent } from '../components/camera';
+import { Camera, type CameraComponentOld } from '../components/cameraOld';
 import { Position } from '../components/position';
 import type { World } from '../ecs/world';
 import { getPixelsPerMeter } from './cameraMath';
@@ -311,7 +311,7 @@ export function createRenderer(
     ctx.restore();
   }
 
-  function drawWorldBounds(viewport: Viewport, camera: CameraComponent, bounds: WorldBounds): void {
+  function drawWorldBounds(viewport: Viewport, camera: CameraComponentOld, bounds: WorldBounds): void {
     const topLeft = worldToViewportPixels({ x: 0, y: 0 }, camera, viewport);
     const bottomRight = worldToViewportPixels({ x: bounds.width, y: bounds.height }, camera, viewport);
 
@@ -327,7 +327,7 @@ export function createRenderer(
 
   function drawRenderItems(
     viewport: Viewport,
-    camera: CameraComponent,
+    camera: CameraComponentOld,
     renderItems: RenderItem[]
   ): void {
     for (const item of renderItems) {
@@ -358,7 +358,7 @@ export function createRenderer(
 
   function worldToViewportPixels(
     worldPositionMeters: { x: number; y: number },
-    camera: CameraComponent,
+    camera: CameraComponentOld,
     viewport: Viewport
   ): { x: number; y: number } {
     const pixelsPerMeter = getPixelsPerMeter(camera);

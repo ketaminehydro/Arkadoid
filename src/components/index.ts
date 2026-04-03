@@ -4,4 +4,4 @@ export * from './body';
 export * from './position';
 export * from './velocity';
 export * from './sprite';
-export * from './camera';
+export * from './cameraOld';

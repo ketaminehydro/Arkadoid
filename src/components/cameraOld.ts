@@ -1,7 +1,8 @@
 /* TYPE */
 import { ComponentType } from '../ecs/component';
 import { EntityId } from '../ecs/entity';
-export interface CameraComponent {
+
+export interface CameraComponentOld {
   position: { x: number; y: number }; // meters
   zoom: number; // factor
   mode: "follow" | "overview"; // determines how the camera behaves
@@ -9,8 +10,8 @@ export interface CameraComponent {
 }
 
 /* SYMBOL */
-export const Camera: ComponentType<CameraComponent> = 
-  Symbol('Camera') as ComponentType<CameraComponent>;
+export const Camera: ComponentType<CameraComponentOld> = 
+  Symbol('Camera') as ComponentType<CameraComponentOld>;
 
 /* FACTORY */
 export function createCamera(
@@ -18,7 +19,7 @@ export function createCamera(
   zoom: number,
   mode : "follow" | "overview",
   target?: EntityId
-): CameraComponent {
+): CameraComponentOld {
   return {
     position,
     zoom,

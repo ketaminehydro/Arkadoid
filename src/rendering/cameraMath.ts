@@ -1,7 +1,7 @@
 export const BASE_PIXELS_PER_METER = 32;
 
-import type { CameraComponent } from '../components/camera';
+import type { CameraComponentOld } from '../components/cameraOld';
 
-export function getPixelsPerMeter(camera: CameraComponent): number {
+export function getPixelsPerMeter(camera: CameraComponentOld): number {
   return BASE_PIXELS_PER_METER * camera.zoom;
 }

@@ -1,8 +1,8 @@
-import type { ComponentType } from '../src/ecs/component';
-import type { System } from '../src/ecs/system';
-import type { World } from '../src/ecs/world';
-import type { CameraComponent } from '../components/CameraComponent';
-import type { CameraComputedComponent } from '../components/CameraComputedComponent';
+import type { ComponentType } from '../ecs/component';
+import type { System } from '../ecs/system';
+import type { World } from '../ecs/world';
+import type { CameraComponent } from '../components/cameraComponent';
+import type { CameraComputedComponent } from '../components/cameraComputedComponent';
 
 const IDENTITY_MATRIX = new Float32Array([
   1, 0, 0, 0,

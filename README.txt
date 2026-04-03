@@ -211,6 +211,25 @@ MENTAL MODEL
 
 _________________________
 
+New target architecture:
+ECS World
+   ↓
+RenderSystem (extraction)
+   ↓
+RenderQueue (frame data)
+   ↓
+Renderer
+   ↓
+Per Camera:
+    → Pass Pipeline
+         → Opaque
+         → Transparent / Emissive
+         → PostFX
+   ↓
+GPU
+
+_________________________
+
 
 /*****************************************************************
    Entity Component System (ECS) structure
