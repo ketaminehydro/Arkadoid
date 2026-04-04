@@ -1,6 +1,9 @@
 import { Camera, type CameraComponent } from '../components/camera';
 import type { ComponentType } from '../ecs/component';
 import type { World } from '../ecs/world';
+import { Position } from '../components/position';
+import type { EntityId } from '../ecs/entity.js';
+import type { Sprite } from '../components/sprite';
 import { FORWARD_EMISSIVE_FRAGMENT_SHADER_SOURCE } from './shaders/forwardEmissive.fragment';
 import { FORWARD_LIT_FRAGMENT_SHADER_SOURCE } from './shaders/forwardLit.fragment';
 import { FORWARD_VERTEX_SHADER_SOURCE } from './shaders/forward.vertex';
@@ -80,13 +83,47 @@ type RendererState = {
   };
 };
 
+
+// Initialize
 const Mesh: ComponentType<MeshData> = Symbol('Mesh') as ComponentType<MeshData>;
 const Material: ComponentType<MaterialData> = Symbol('Material') as ComponentType<MaterialData>;
 const Transform: ComponentType<TransformData> = Symbol('Transform') as ComponentType<TransformData>;
 const Light: ComponentType<LightComponentData> = Symbol('Light') as ComponentType<LightComponentData>;
+
 const MAX_LIGHTS = 8;
 
 let rendererState: RendererState | null = null;
+
+
+
+function createTestMesh(gl: WebGL2RenderingContext) {
+  const vao = gl.createVertexArray()!;
+  gl.bindVertexArray(vao);
+
+  const buffer = gl.createBuffer()!;
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+  const vertices = new Float32Array([
+    -0.5, -0.5, 0,
+     0.5, -0.5, 0,
+     0.0,  0.5, 0
+  ]);
+
+  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+
+  gl.bindVertexArray(null);
+
+  return {
+    vao,
+    count: 3
+  };
+}
+
+
+
 
 export function render(world: World): void {
   if (!rendererState) {
@@ -117,7 +154,7 @@ function buildRenderQueue(world: World): RenderQueue {
     if (camera) {
       queue.cameras.push(createCameraData(camera, canvas.width, canvas.height));
     }
-
+  
     const mesh = world.getComponent(entityId, Mesh);
     const material = world.getComponent(entityId, Material);
     const transform = world.getComponent(entityId, Transform);
@@ -139,9 +176,49 @@ function buildRenderQueue(world: World): RenderQueue {
         radius: light.radius
       });
     }
+
+// debug
+  if (queue.items.length === 0) {
+    console.log('No renderable items found, adding test mesh "triangle".');
+  const mesh = createTestMesh(rendererState!.gl);
+
+  queue.items.push({
+    mesh,
+    material: {
+      type: "opaque",
+      uniforms: { uColor: [1, 0, 0] }
+    },
+    modelMatrix: makeIdentityMatrix(),
+    position: { x: 0, y: 0, z: 0 }
+  });
+
+  console.log(queue);
+}
+
+
   }
 
   return queue;
+}
+
+function makeOrthographicMatrix(
+  left: number, right: number,
+  bottom: number, top: number,
+  near: number, far: number
+): Mat4 {
+  const lr = 1 / (left - right);
+  const bt = 1 / (bottom - top);
+  const nf = 1 / (near - far);
+
+  return new Float32Array([
+    -2 * lr, 0, 0, 0,
+    0, -2 * bt, 0, 0,
+    0, 0, 2 * nf, 0,
+    (left + right) * lr,
+    (top + bottom) * bt,
+    (far + near) * nf,
+    1
+  ]);
 }
 
 function renderCamera(queue: RenderQueue, camera: CameraData): void {
@@ -289,8 +366,12 @@ function createRendererState(): RendererState {
   gl.enable(gl.DEPTH_TEST);
   gl.clearColor(0, 0, 0, 1);
 
-  const litProgram = createProgram(gl, FORWARD_VERTEX_SHADER_SOURCE, FORWARD_LIT_FRAGMENT_SHADER_SOURCE);
-  const emissiveProgram = createProgram(
+  const litProgram = createProgram(
+    gl, 
+    FORWARD_VERTEX_SHADER_SOURCE, 
+    FORWARD_LIT_FRAGMENT_SHADER_SOURCE);
+  
+    const emissiveProgram = createProgram(
     gl,
     FORWARD_VERTEX_SHADER_SOURCE,
     FORWARD_EMISSIVE_FRAGMENT_SHADER_SOURCE
@@ -317,23 +398,66 @@ function createRendererState(): RendererState {
   };
 }
 
+function makePerspectiveMatrix(fov: number, aspect: number, near: number, far: number): Mat4 {
+  const f = 1.0 / Math.tan(fov / 2);
+  const nf = 1 / (near - far);
+
+  return new Float32Array([
+    f / aspect, 0, 0, 0,
+    0, f, 0, 0,
+    0, 0, (far + near) * nf, -1,
+    0, 0, (2 * far * near) * nf, 0
+  ]);
+}
+
+function makeTranslationMatrix(x: number, y: number, z: number): Mat4 {
+  return new Float32Array([
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    x, y, z, 1
+  ]);
+}
+
 function createCameraData(camera: CameraComponent, width: number, height: number): CameraData {
+  const vp = camera.viewport ?? { x: 0, y: 0, width: 1, height: 1 };
+
+  const viewport = {
+    x: vp.x * width,
+    y: vp.y * height,
+    width: vp.width * width,
+    height: vp.height * height
+  };
+
+  const aspect = viewport.width / viewport.height;
+
+  let projectionMatrix: Mat4;
+
+  if (camera.projectionType === "orthographic" && camera.orthographic) {
+    const o = camera.orthographic;
+    projectionMatrix = makeOrthographicMatrix(
+      o.left, o.right, o.bottom, o.top, o.near, o.far
+    );
+  } else {
+    const p = camera.perspective ?? { fov: Math.PI / 3, near: 0.1, far: 100 };
+    projectionMatrix = makePerspectiveMatrix(p.fov, aspect, p.near, p.far);
+  }
+
+  const z = 5 / (camera.zoom || 1);
+
   const position = {
     x: camera.position.x,
     y: camera.position.y,
-    z: 0
+    z
   };
 
+  const viewMatrix = makeTranslationMatrix(-position.x, -position.y, -position.z);
+
   return {
-    viewMatrix: makeIdentityMatrix(),
-    projectionMatrix: makeIdentityMatrix(),
-    viewport: {
-      x: 0,
-      y: 0,
-      width,
-      height
-    },
-    clearColor: true,
+    viewMatrix,
+    projectionMatrix,
+    viewport,
+    clearColor: camera.clearColor ?? true,
     position
   };
 }

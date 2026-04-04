@@ -1,5 +1,6 @@
-/* TYPE */
 import { ComponentType } from '../ecs/component';
+
+/* TYPE */
 export interface SpriteComponent {
   image: HTMLImageElement;
   width: number;

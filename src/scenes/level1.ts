@@ -15,10 +15,6 @@ import { createMovementSystem } from '../systems/movementSystem.js';
 import { createOverviewCameraSystem } from '../systems/overviewCameraSystem.js';
 import { createPlayerControlSystem } from '../systems/playerControlSystem.js';
 
-function randomRange(min: number, max: number): number {
-  return min + Math.random() * (max - min);
-}
-
 export interface Level1 {
   world: World;
   playerId: EntityId;
@@ -29,6 +25,19 @@ export interface Level1 {
 
 const WORLD_WIDTH_METERS = 100;
 const WORLD_HEIGHT_METERS = 100;
+
+function randomRange(min: number, max: number): number {
+  return min + Math.random() * (max - min);
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+    image.src = src;
+  });
+}
 
 function createAsteroids(world: World, count: number): void {
   for (let index = 0; index < count; index += 1) {
@@ -51,6 +60,7 @@ function createAsteroids(world: World, count: number): void {
 export async function loadLevel1(): Promise<Level1> {
   const world = new World();
 
+  // player
   const playerId = createPlayer(world, {
     x: 50,
     y: 50,
@@ -59,15 +69,17 @@ export async function loadLevel1(): Promise<Level1> {
 
   world.addComponent(playerId, Body, createBody(2, 2, '#f4d35e'));
 
-
+  // asteroids
   createAsteroids(world, 14);
 
+  // cameras
   const followCameraId = world.createEntity();
   world.addComponent(followCameraId, Camera, createCamera({ x: 50, y: 50 }, 2, 'follow', playerId));
 
   const overviewCameraId = world.createEntity();
   world.addComponent(overviewCameraId, Camera, createCamera({ x: 50, y: 50 }, 0.15, 'overview'));
 
+  // systems
   world.addSystem(createPlayerControlSystem({ world }));
   world.addSystem(createCollisionSystem({ world }));
   world.addSystem(createMovementSystem({ world }));
@@ -90,13 +102,4 @@ export async function loadLevel1(): Promise<Level1> {
       height: WORLD_HEIGHT_METERS
     }
   };
-}
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    image.src = src;
-  });
 }
