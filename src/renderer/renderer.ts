@@ -1,3 +1,22 @@
+ /***************************************************************
+ECS World
+   ↓
+buildRenderQueue
+   ↓
+RenderQueue (flat data)
+   ↓
+for each Camera:
+   ↓
+    opaquePass      (depth + lighting)
+    transparentPass (sorted blending)
+    emissivePass    (additive glow)
+   ↓
+GPU Draw Calls
+
+**************************/
+
+
+
 import { Camera, type CameraComponent } from '../components/camera';
 import type { ComponentType } from '../ecs/component';
 import type { World } from '../ecs/world';
@@ -95,7 +114,7 @@ const MAX_LIGHTS = 8;
 let rendererState: RendererState | null = null;
 
 
-
+// Test injection
 function createTestMesh(gl: WebGL2RenderingContext) {
   const vao = gl.createVertexArray()!;
   gl.bindVertexArray(vao);
@@ -123,8 +142,42 @@ function createTestMesh(gl: WebGL2RenderingContext) {
 }
 
 
+// quad mesh for sprites
+function createQuadMesh(gl: WebGL2RenderingContext): MeshData {
+  const vao = gl.createVertexArray()!;
+  gl.bindVertexArray(vao);
+
+  const vertices = new Float32Array([
+    // position    // uv
+    -0.5, -0.5, 0,  0, 0,
+     0.5, -0.5, 0,  1, 0,
+     0.5,  0.5, 0,  1, 1,
+
+    -0.5, -0.5, 0,  0, 0,
+     0.5,  0.5, 0,  1, 1,
+    -0.5,  0.5, 0,  0, 1,
+  ]);
+
+  const buffer = gl.createBuffer()!;
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+  // position
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 20, 0);
+
+  // uv
+  gl.enableVertexAttribArray(1);
+  gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 20, 12);
+
+  gl.bindVertexArray(null);
+
+  return { vao, count: 6 };
+}
 
 
+
+// renderer
 export function render(world: World): void {
   if (!rendererState) {
     rendererState = createRendererState();
@@ -193,7 +246,8 @@ function buildRenderQueue(world: World): RenderQueue {
   });
 
   console.log(queue);
-}
+  
+  }
 
 
   }

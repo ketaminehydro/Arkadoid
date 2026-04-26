@@ -1,6 +1,6 @@
 import type { System } from '../ecs/system';
 import type { World } from '../ecs/world';
-import { render } from '../rendering/renderer';
+import { render } from '../renderer/renderer';
 
 export function createRenderSystem(): System {
   return {
