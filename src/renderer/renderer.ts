@@ -1,4 +1,25 @@
  /***************************************************************
+ECS
+ ├── Sprite        (what it is visually)
+ ├── Transform     (where it is)
+ └── Renderable    (how to draw it)
+
+        ↓
+
+buildRenderQueue()
+
+        ↓
+
+RenderItem = {
+  mesh,
+  material,
+  modelMatrix ← from Transform
+}
+
+        ↓
+
+Renderer
+
 ECS World
    ↓
 buildRenderQueue
