@@ -1,0 +1,4 @@
+export const Renderable = Symbol('Renderable') as ComponentType<{
+  mesh: MeshData;
+  material: MaterialData;
+}>;

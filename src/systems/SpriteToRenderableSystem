@@ -1,0 +1,22 @@
+import { Sprite } from '../components';
+import type { System } from '../ecs/system';
+import type { World } from '../ecs/world';
+
+function spriteToRenderableSystem(world: World, quadMesh: MeshData) : System {
+  for (const entity of world.entities) {
+    const sprite = world.getComponent(entity, Sprite);
+    const transform = world.getComponent(entity, Transform);
+
+    if (!sprite || !transform) continue;
+
+    world.addComponent(entity, Renderable, {
+      mesh: quadMesh,
+      material: {
+        type: 'transparent',
+        uniforms: {
+          uTexture: sprite.texture
+        }
+      }
+    });
+  }
+}

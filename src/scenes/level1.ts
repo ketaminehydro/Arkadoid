@@ -8,6 +8,7 @@ import {
 } from '../components';
 import type { EntityId } from '../ecs/entity.js';
 import { World } from '../ecs/world.js';
+import { createRenderSystem } from '../systems/renderSystem.js';
 import { createPlayer } from '../entities/player.js';
 import { createCollisionSystem } from '../systems/collisionSystem.js';
 import { createFollowCameraSystem } from '../systems/followCameraSystem.js';
@@ -26,6 +27,7 @@ export interface Level1 {
 const WORLD_WIDTH_METERS = 100;
 const WORLD_HEIGHT_METERS = 100;
 
+// helper functions
 function randomRange(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
@@ -39,6 +41,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+// "outsourced" Asteroids placement 
 function createAsteroids(world: World, count: number): void {
   for (let index = 0; index < count; index += 1) {
     const asteroidId = world.createEntity();
@@ -57,6 +60,7 @@ function createAsteroids(world: World, count: number): void {
   }
 }
 
+// create the level
 export async function loadLevel1(): Promise<Level1> {
   const world = new World();
 
@@ -80,6 +84,7 @@ export async function loadLevel1(): Promise<Level1> {
   world.addComponent(overviewCameraId, Camera, createCamera({ x: 50, y: 50 }, 0.15, 'overview'));
 
   // systems
+  world.addSystem(createRenderSystem());
   world.addSystem(createPlayerControlSystem({ world }));
   world.addSystem(createCollisionSystem({ world }));
   world.addSystem(createMovementSystem({ world }));

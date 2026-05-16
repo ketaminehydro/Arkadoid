@@ -200,16 +200,22 @@ function createQuadMesh(gl: WebGL2RenderingContext): MeshData {
 
 // renderer
 export function render(world: World): void {
+ 
+  // if no renderer state, create it (this will initialize WebGL context and shaders)
   if (!rendererState) {
     rendererState = createRendererState();
   }
 
+  // build the render queue by iterating over all entities and collecting renderable items, cameras, and lights
   const queue = buildRenderQueue(world);
+
+  // for each camera in the queue, execute the rendering passes (opaque, transparent, emissive) to draw the scene from that camera's perspective
   for (const camera of queue.cameras) {
     renderCamera(queue, camera);
   }
 }
 
+// This function iterates over all entities in the world and collects data for cameras, renderable items, and lights into a flat RenderQueue structure that can be efficiently processed by the renderer.
 function buildRenderQueue(world: World): RenderQueue {
   const queue: RenderQueue = {
     cameras: [],
@@ -217,7 +223,7 @@ function buildRenderQueue(world: World): RenderQueue {
     lights: []
   };
 
-  if (!rendererState) {
+  if (!rendererState) {  // TODO: why is that here? there is no way to have a render queue without a renderer state, and if there is something wrong with the renderer state, we probably want to know about it instead of silently returning an empty queue
     return queue;
   }
 
@@ -424,34 +430,39 @@ function drawEmissive(item: RenderItem, camera: CameraData): void {
   gl.drawArrays(item.mesh.mode ?? gl.TRIANGLES, 0, item.mesh.count);
 }
 
+// renderState definition 
 function createRendererState(): RendererState {
+  
+  // check if canvas is available and set reference to it
   const canvas = document.getElementById('game');
   if (!(canvas instanceof HTMLCanvasElement)) {
     throw new Error('Game canvas is not available.');
   }
 
+  // check if WebGL2 is available and set reference to it
   const gl = canvas.getContext('webgl2');
   if (!gl) {
     throw new Error('WebGL2 context is not available.');
   }
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  // basic WebGL setup - enable depth testing and set clear color
+  gl.enable(gl.DEPTH_TEST); // depth testing for correct occlusion
+  gl.clearColor(0, 0, 0, 1); // background color
 
-  gl.enable(gl.DEPTH_TEST);
-  gl.clearColor(0, 0, 0, 1);
-
+  // create shader programs
   const litProgram = createProgram(
     gl, 
     FORWARD_VERTEX_SHADER_SOURCE, 
-    FORWARD_LIT_FRAGMENT_SHADER_SOURCE);
+    FORWARD_LIT_FRAGMENT_SHADER_SOURCE
+  );
   
-    const emissiveProgram = createProgram(
+  const emissiveProgram = createProgram(
     gl,
     FORWARD_VERTEX_SHADER_SOURCE,
     FORWARD_EMISSIVE_FRAGMENT_SHADER_SOURCE
   );
 
+  // return the renderer state with references to WebGL context, shader programs, and uniform locations
   return {
     gl,
     litProgram,

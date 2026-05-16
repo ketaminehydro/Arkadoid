@@ -1,7 +1,6 @@
 import { createGameLoop } from './core/gameLoop.js';
 import { setupInput } from './core/input.js';
 import { loadLevel1 } from './scenes/level1.js';
-import { createRenderSystem } from './systems/renderSystem.js';
 
 async function bootstrap(): Promise<void> {
   
@@ -23,9 +22,6 @@ async function bootstrap(): Promise<void> {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
   });
-
-  // Set up systems
-  world.addSystem(createRenderSystem());
 
   // Set up gameloop
   const loop = createGameLoop((deltaTime: number) => {
